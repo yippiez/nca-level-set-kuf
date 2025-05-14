@@ -9,6 +9,7 @@
 - The notebooks should be designed in such a way to be runnable as normal python files. Meaning
 if a computationally heavy section is present cache it in the `cache` folder for future use.
 - Make sure to not repeat variable names in notebooks to ensure no variable collision occurs.
+- In notebooks the cache utility could be used to store inter variables in notebooks to not compute them again when running notebooks again
 
 ## Folder Structure
 - *cache:* Where notebook caches are stored
@@ -19,7 +20,7 @@ if a computationally heavy section is present cache it in the `cache` folder for
 
 ## Implementation Notes
 - **Signed Distance Functions (SDFs)**: Implemented in `util/sdf.py` with proper vectorization
-  - Basic shapes: `sdf_sphere`, `sdf_box`, `sdf_cylinder`, `sdf_torus`
+  - Basic shapes: `sdf_sphere`, `sdf_box`, `sdf_pill`, `sdf_torus`
   - Visualization: `sdf_render` function using marching cubes algorithm from scikit-image
   - Operations: Union, Intersection, and Subtraction for combining shapes
 - SDF visualizations are found in `reports/sdf/` as GIF animations

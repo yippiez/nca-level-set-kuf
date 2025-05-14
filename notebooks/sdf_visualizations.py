@@ -17,7 +17,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from util.sdf import (
     sdf_sphere,
-    sdf_cylinder,
+    sdf_pill,
     sdf_box,
     sdf_torus,
     sdf_render
@@ -99,22 +99,22 @@ visualize_and_save_sdf(
 )
 
 # %% [markdown]
-# ## Cylinder SDF
+# ## Pill SDF
 
 # %%
-# Create a cylinder SDF with axis from (0,0,-1) to (0,0,1) and radius 0.5
-cylinder_func = partial(
-    sdf_cylinder, 
+# Create a pill SDF with axis from (0,0,-1) to (0,0,1) and radius 0.5
+pill_func = partial(
+    sdf_pill, 
     p1=np.array([0.0, 0.0, -1.0]), 
     p2=np.array([0.0, 0.0, 1.0]), 
     radius=0.5
 )
 
-# Visualize and save the cylinder SDF
+# Visualize and save the pill SDF
 visualize_and_save_sdf(
-    cylinder_func,
-    "cylinder",
-    "Cylinder SDF with radius 0.5 along the z-axis"
+    pill_func,
+    "pill",
+    "Pill SDF with radius 0.5 along the z-axis"
 )
 
 # %% [markdown]
@@ -201,35 +201,35 @@ visualize_and_save_sdf(
 )
 
 # %%
-# Create intersecting cylinders to form a plus-like shape
-cylinder_x = partial(
-    sdf_cylinder,
+# Create intersecting pills to form a plus-like shape
+pill_x = partial(
+    sdf_pill,
     p1=np.array([-1.0, 0.0, 0.0]),
     p2=np.array([1.0, 0.0, 0.0]),
     radius=0.3
 )
 
-cylinder_y = partial(
-    sdf_cylinder,
+pill_y = partial(
+    sdf_pill,
     p1=np.array([0.0, -1.0, 0.0]),
     p2=np.array([0.0, 1.0, 0.0]),
     radius=0.3
 )
 
-cylinder_z = partial(
-    sdf_cylinder,
+pill_z = partial(
+    sdf_pill,
     p1=np.array([0.0, 0.0, -1.0]),
     p2=np.array([0.0, 0.0, 1.0]),
     radius=0.3
 )
 
-cylinder_union = partial(sdf_union, sdf_funcs=[cylinder_x, cylinder_y, cylinder_z])
+pill_union = partial(sdf_union, sdf_funcs=[pill_x, pill_y, pill_z])
 
 # Visualize and save the compound shape
 visualize_and_save_sdf(
-    cylinder_union,
-    "cylinder_union",
-    "Union of three perpendicular cylinders"
+    pill_union,
+    "pill_union",
+    "Union of three perpendicular pills"
 )
 
 # %%

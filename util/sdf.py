@@ -27,24 +27,24 @@ def sdf_sphere(point, center, radius):
     # Positive outside, zero on the surface, negative inside
     return dist_to_center - radius
 
-def sdf_cylinder(point, p1, p2, radius):
+def sdf_pill(point, p1, p2, radius):
     """
-    Calculate the signed distance from a point to a cylinder.
+    Calculate the signed distance from a point to a pill shape.
     
     Args:
         point: Array-like of shape (..., 3) containing (x, y, z) coordinates
-        p1: Array-like of shape (3,) for one end of the cylinder's axis
-        p2: Array-like of shape (3,) for the other end of the cylinder's axis
-        radius: Positive float, the radius of the cylinder
+        p1: Array-like of shape (3,) for one end of the pill's axis
+        p2: Array-like of shape (3,) for the other end of the pill's axis
+        radius: Positive float, the radius of the pill
         
     Returns:
-        Float or array of floats, the signed distance from the point(s) to the cylinder
+        Float or array of floats, the signed distance from the point(s) to the pill
     """
     point = np.asarray(point)
     p1 = np.asarray(p1)
     p2 = np.asarray(p2)
     
-    # Calculate the axis of the cylinder
+    # Calculate the axis of the pill
     axis = p2 - p1
     axis_length = np.linalg.norm(axis)
     axis_normalized = axis / axis_length if axis_length > 0 else np.array([0, 0, 1])
