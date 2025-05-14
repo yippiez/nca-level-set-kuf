@@ -30,3 +30,6 @@ if a computationally heavy section is present cache it in the `cache` folder for
   "allowed_command_prefixes": ["uv", "pytest", "git"]
 }
 ``` 
+
+## Version Control Notes
+- Memorize to commit pyproject.toml together with uv.lock when commiting
