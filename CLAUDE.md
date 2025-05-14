@@ -17,6 +17,12 @@ if a computationally heavy section is present cache it in the `cache` folder for
 - *reports:* Where resulting tables, figures and models are stored
 - *util:* Utility scripts like visualizations, preprocessing etc.
 
+## Implementation Notes
+- **Signed Distance Functions (SDFs)**: Implemented in `util/sdf.py` with proper vectorization
+  - Basic shapes: `sdf_sphere`, `sdf_box`, `sdf_cylinder`, `sdf_torus`
+  - Visualization: `sdf_render` function using marching cubes algorithm from scikit-image
+  - Operations: Union, Intersection, and Subtraction for combining shapes
+- SDF visualizations are found in `reports/sdf/` as GIF animations
 
 ## Allowed Commands 
 ```json

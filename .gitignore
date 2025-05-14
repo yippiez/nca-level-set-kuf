@@ -1,0 +1,29 @@
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Virtual environments
+venv/
+env/
+.env/
+
+# Local development settings
+.vscode/
+.idea/
+
+# GIF and other large output files
+*.gif
+reports/sdf/*.gif
+
+# Cache directories
+cache/*
+!cache/README.md
+
+# UV dependency lock file
+uv.lock
