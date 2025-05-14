@@ -24,6 +24,3 @@ reports/sdf/*.gif
 # Cache directories
 cache/*
 !cache/README.md
-
-# UV dependency lock file
-uv.lock
