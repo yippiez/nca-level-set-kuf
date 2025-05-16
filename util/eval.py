@@ -6,54 +6,34 @@ from typing import Union
 
 
 def fcnn_n_perceptrons(model: nn.Module) -> int:
-    """
-    Count the total number of perceptrons (neurons) in a Fully Connected Neural Network.
-    
-    This function counts all neurons in linear layers, including both hidden and output neurons.
-    
-    Args:
-        model: A PyTorch neural network model containing Linear layers
-        
-    Returns:
-        Total number of perceptrons in the model
-        
-    Example:
-        >>> from models.fcnn import FCNN
-        >>> model = FCNN(input_size=4, hidden_size=64, output_size=1, num_layers=5)
-        >>> n_perceptrons = fcnn_n_perceptrons(model)
-        >>> print(f"Model has {n_perceptrons} perceptrons")
-    """
+    """Count the total number of perceptrons in a FCNN model."""
     total_perceptrons = 0
     
-    print("Layer-wise perceptron count:")
-    print("-" * 40)
-    
-    # Iterate through all modules in the model
     for name, module in model.named_modules():
         if isinstance(module, nn.Linear):
-            # Each Linear layer has 'out_features' number of perceptrons
-            n_neurons = module.out_features
-            total_perceptrons += n_neurons
-            
-            # Print layer information
-            print(f"{name:<20} {module.in_features:>4} -> {module.out_features:>4} : {n_neurons:>4} neurons")
-    
-    print("-" * 40)
-    print(f"Total perceptrons: {total_perceptrons}")
+            total_perceptrons += module.out_features
     
     return total_perceptrons
 
 
-def model_summary(model: nn.Module) -> dict:
-    """
-    Generate a comprehensive summary of a neural network model.
+def fcnn_layer_details(model: nn.Module) -> list:
+    """Get detailed information about each layer in a FCNN model."""
+    layer_details = []
     
-    Args:
-        model: A PyTorch neural network model
-        
-    Returns:
-        Dictionary containing model statistics
-    """
+    for name, module in model.named_modules():
+        if isinstance(module, nn.Linear):
+            layer_details.append({
+                'name': name,
+                'in_features': module.in_features,
+                'out_features': module.out_features,
+                'n_neurons': module.out_features
+            })
+    
+    return layer_details
+
+
+def model_summary(model: nn.Module) -> dict:
+    """Generate a comprehensive summary of a neural network model."""
     summary = {
         'total_parameters': sum(p.numel() for p in model.parameters()),
         'trainable_parameters': sum(p.numel() for p in model.parameters() if p.requires_grad),

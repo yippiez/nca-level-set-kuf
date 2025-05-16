@@ -6,17 +6,7 @@ import functools
 from skimage.measure import marching_cubes
 
 def sdf_sphere(point, center, radius):
-    """
-    Calculate the signed distance from a point to a sphere.
-    
-    Args:
-        point: Array-like of shape (..., 3) containing (x, y, z) coordinates
-        center: Array-like of shape (3,) for the center of the sphere
-        radius: Positive float, the radius of the sphere
-        
-    Returns:
-        Float or array of floats, the signed distance from the point(s) to the sphere
-    """
+    """Calculate the signed distance from a point to a sphere."""
     point = np.asarray(point)
     center = np.asarray(center)
     
@@ -28,18 +18,7 @@ def sdf_sphere(point, center, radius):
     return dist_to_center - radius
 
 def sdf_pill(point, p1, p2, radius):
-    """
-    Calculate the signed distance from a point to a pill shape.
-    
-    Args:
-        point: Array-like of shape (..., 3) containing (x, y, z) coordinates
-        p1: Array-like of shape (3,) for one end of the pill's axis
-        p2: Array-like of shape (3,) for the other end of the pill's axis
-        radius: Positive float, the radius of the pill
-        
-    Returns:
-        Float or array of floats, the signed distance from the point(s) to the pill
-    """
+    """Calculate the signed distance from a point to a pill shape."""
     point = np.asarray(point)
     p1 = np.asarray(p1)
     p2 = np.asarray(p2)
@@ -79,17 +58,7 @@ def sdf_pill(point, p1, p2, radius):
         return dist_to_axis - radius
 
 def sdf_box(point, center, dimensions):
-    """
-    Calculate the signed distance from a point to an axis-aligned box.
-    
-    Args:
-        point: Array-like of shape (..., 3) containing (x, y, z) coordinates
-        center: Array-like of shape (3,) for the center of the box
-        dimensions: Array-like of shape (3,) for the dimensions of the box (width, height, depth)
-        
-    Returns:
-        Float or array of floats, the signed distance from the point(s) to the box
-    """
+    """Calculate the signed distance from a point to an axis-aligned box."""
     point = np.asarray(point)
     center = np.asarray(center)
     dimensions = np.asarray(dimensions)
@@ -114,18 +83,7 @@ def sdf_box(point, center, dimensions):
     return outside_distance + inside_distance
 
 def sdf_torus(point, center, major_radius, minor_radius):
-    """
-    Calculate the signed distance from a point to a torus aligned with the xz-plane.
-    
-    Args:
-        point: Array-like of shape (..., 3) containing (x, y, z) coordinates
-        center: Array-like of shape (3,) for the center of the torus
-        major_radius: Positive float, the radius from the center of the torus to the center of the tube
-        minor_radius: Positive float, the radius of the tube
-        
-    Returns:
-        Float or array of floats, the signed distance from the point(s) to the torus
-    """
+    """Calculate the signed distance from a point to a torus aligned with the xz-plane."""
     point = np.asarray(point)
     center = np.asarray(center)
     
@@ -141,23 +99,7 @@ def sdf_torus(point, center, major_radius, minor_radius):
     return dist
 
 def sdf_render(sdf_func, grid_size=50, bounds=(-1, 1), threshold=0.0, n_frames=36, save_path=None, figsize=(10, 10), dpi=100, fps=15):
-    """
-    Render a 3D signed distance function as a rotating animation.
-    
-    Args:
-        sdf_func: A function that takes point(s) of shape (..., 3) and returns signed distance(s)
-        grid_size: Number of points along each dimension in the grid
-        bounds: Tuple (min, max) for the bounds of the grid in all dimensions
-        threshold: The isosurface threshold value (usually 0 for the surface)
-        n_frames: Number of frames in the rotation animation
-        save_path: Path to save the resulting animation (if None, just displays it)
-        figsize: Figure size for the plot
-        dpi: DPI for the rendered animation
-        fps: Frames per second for the animation
-        
-    Returns:
-        The created animation object
-    """
+    """Render a 3D signed distance function as a rotating animation."""
     # Create a 3D grid of points
     x = np.linspace(bounds[0], bounds[1], grid_size)
     y = np.linspace(bounds[0], bounds[1], grid_size)
@@ -243,23 +185,7 @@ def sdf_render(sdf_func, grid_size=50, bounds=(-1, 1), threshold=0.0, n_frames=3
 
 
 def sdf_render_level_set(model, shape_values=None, grid_size=50, bounds=(-1, 1), figsize=(20, 16), save_path=None):
-    """
-    Render 3D level sets of a 4D SDF function (x, y, z, shape) -> distance.
-    Creates a grid of 3D visualizations, each showing the zero level set for a different shape parameter.
-    
-    Args:
-        model: A neural network model that takes inputs of shape (N, 4) where the last 
-               dimension is the shape parameter, and outputs distances of shape (N, 1)
-        shape_values: List of shape values to visualize. If None, defaults to visualizing
-                      shapes 0-4 in a 5x5 grid with intermediate values
-        grid_size: Number of points along each dimension in the 3D grid
-        bounds: Tuple (min, max) for the bounds of the grid in x, y, z dimensions
-        figsize: Figure size for the entire plot
-        save_path: Path to save the resulting image (if None, just displays it)
-        
-    Returns:
-        The created figure
-    """
+    """Render 3D level sets of a 4D SDF function (x, y, z, shape) -> distance."""
     import torch
     import matplotlib.pyplot as plt
     from mpl_toolkits.mplot3d import Axes3D
@@ -385,6 +311,5 @@ def sdf_render_level_set(model, shape_values=None, grid_size=50, bounds=(-1, 1),
     # Save if requested
     if save_path:
         plt.savefig(save_path, dpi=300, bbox_inches='tight')
-        print(f"Level set visualization saved to {save_path}")
     
     return fig

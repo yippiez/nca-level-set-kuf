@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 # Import our modules
 from models.fcnn import FCNN
 from util.cache import cache_get_torch, cache_get_json, cache_get_pickle
-from util.eval import fcnn_n_perceptrons, model_summary
+from util.eval import fcnn_n_perceptrons, fcnn_layer_details, model_summary
 
 # Get project root
 PROJECT_ROOT = pathlib.Path(__file__).parent.parent
@@ -67,6 +67,15 @@ model = load_model_from_cache()
 print("\nCounting perceptrons in the model:")
 print("=" * 50)
 n_perceptrons = fcnn_n_perceptrons(model)
+
+# Get layer details and print them
+layer_details = fcnn_layer_details(model)
+print("Layer-wise perceptron count:")
+print("-" * 40)
+for layer in layer_details:
+    print(f"{layer['name']:<20} {layer['in_features']:>4} -> {layer['out_features']:>4} : {layer['n_neurons']:>4} neurons")
+print("-" * 40)
+print(f"Total perceptrons: {n_perceptrons}")
 print("=" * 50)
 
 # %% [markdown]

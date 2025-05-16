@@ -9,16 +9,7 @@ from typing import Any, Dict, List, Union, Optional
 CACHE_DIR = pathlib.Path(__file__).parent.parent / "cache"
 
 def cache_save(obj: Any, cache_name: str) -> str:
-    """
-    Save a Python object to the cache directory with appropriate format based on type.
-    
-    Args:
-        obj: The Python object to cache
-        cache_name: Name to use for the cached file (without extension)
-    
-    Returns:
-        Path to the saved cache file
-    """
+    """Save a Python object to the cache directory with appropriate format based on type."""
     # Create cache directory if it doesn't exist
     CACHE_DIR.mkdir(exist_ok=True, parents=True)
     
@@ -54,15 +45,7 @@ def cache_save(obj: Any, cache_name: str) -> str:
 
 
 def cache_get_numpy(cache_name: str) -> np.ndarray:
-    """
-    Get a cached numpy array.
-    
-    Args:
-        cache_name: Name of the cache
-    
-    Returns:
-        The numpy array
-    """
+    """Get a cached numpy array."""
     file_path = CACHE_DIR / f"{cache_name}.npy"
     if not file_path.exists():
         raise FileNotFoundError(f"No numpy cache found for {cache_name}")
@@ -71,15 +54,7 @@ def cache_get_numpy(cache_name: str) -> np.ndarray:
 
 
 def cache_get_pandas(cache_name: str):
-    """
-    Get a cached pandas DataFrame.
-    
-    Args:
-        cache_name: Name of the cache
-    
-    Returns:
-        The pandas DataFrame
-    """
+    """Get a cached pandas DataFrame."""
     import pandas as pd
     file_path = CACHE_DIR / f"{cache_name}.csv"
     if not file_path.exists():
@@ -89,15 +64,7 @@ def cache_get_pandas(cache_name: str):
 
 
 def cache_get_torch(cache_name: str):
-    """
-    Get a cached PyTorch tensor.
-    
-    Args:
-        cache_name: Name of the cache
-    
-    Returns:
-        The PyTorch tensor
-    """
+    """Get a cached PyTorch tensor."""
     import torch
     file_path = CACHE_DIR / f"{cache_name}.pt"
     if not file_path.exists():
@@ -107,15 +74,7 @@ def cache_get_torch(cache_name: str):
 
 
 def cache_get_json(cache_name: str) -> Union[Dict, List]:
-    """
-    Get a cached JSON object.
-    
-    Args:
-        cache_name: Name of the cache
-    
-    Returns:
-        The JSON object (dict or list)
-    """
+    """Get a cached JSON object."""
     file_path = CACHE_DIR / f"{cache_name}.json"
     if not file_path.exists():
         raise FileNotFoundError(f"No JSON cache found for {cache_name}")
@@ -125,15 +84,7 @@ def cache_get_json(cache_name: str) -> Union[Dict, List]:
 
 
 def cache_get_pickle(cache_name: str) -> Any:
-    """
-    Get a cached pickle object.
-    
-    Args:
-        cache_name: Name of the cache
-    
-    Returns:
-        The pickled object
-    """
+    """Get a cached pickle object."""
     file_path = CACHE_DIR / f"{cache_name}.pkl"
     if not file_path.exists():
         raise FileNotFoundError(f"No pickle cache found for {cache_name}")
@@ -143,16 +94,7 @@ def cache_get_pickle(cache_name: str) -> Any:
 
 
 def cache_exists(cache_name: str, extension: Optional[str] = None) -> bool:
-    """
-    Check if a cache file exists.
-    
-    Args:
-        cache_name: Name of the cache
-        extension: File extension to check (without the dot). If None, checks all supported extensions.
-    
-    Returns:
-        True if the cache exists, False otherwise
-    """
+    """Check if a cache file exists."""
     if extension:
         file_path = CACHE_DIR / f"{cache_name}.{extension}"
         return file_path.exists()

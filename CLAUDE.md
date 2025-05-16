@@ -10,6 +10,7 @@
 if a computationally heavy section is present cache it in the `cache` folder for future use.
 - Make sure to not repeat variable names in notebooks to ensure no variable collision occurs.
 - In notebooks the cache utility could be used to store inter variables in notebooks to not compute them again when running notebooks again
+- Don't print as much in the functions defined outside notebooks
 
 ## Folder Structure
 - *cache:* Where notebook caches are stored
