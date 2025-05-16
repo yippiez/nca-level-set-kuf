@@ -45,7 +45,7 @@ config = CSGRenderConfig(
     image_size=(400, 400),  # Smaller images
     camera_rotation=(45, 20, 0),
     n_frames=10,  # Fewer frames
-    fps=10,
+    fps=5,  # Slower animation
     colorscheme="Cornfield"
 )
 
