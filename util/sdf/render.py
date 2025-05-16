@@ -52,7 +52,11 @@ def sdf_to_stl(sdf_func: Callable, config: CSGRenderConfig, filepath: str) -> No
             edge1 = v1 - v0
             edge2 = v2 - v0
             normal = np.cross(edge1, edge2)
-            normal = normal / np.linalg.norm(normal)
+            norm_length = np.linalg.norm(normal)
+            if norm_length > 0:
+                normal = normal / norm_length
+            else:
+                normal = np.array([0, 0, 1])  # Default normal if degenerate
             
             f.write(f"  facet normal {normal[0]} {normal[1]} {normal[2]}\n")
             f.write("    outer loop\n")
