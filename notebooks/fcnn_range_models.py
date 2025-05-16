@@ -53,7 +53,9 @@ from util.sdf import (sdf_sphere, sdf_pill, sdf_box, sdf_torus, sdf_cylinder,
 from util.cache import cache_save, cache_exists, cache_get_torch
 from util.types import CSGRenderConfig
 from util.sdf.render import (sdf_render_csg, sdf_render_csg_animation, 
-                           sdf_render_level_set, sdf_render_level_set_grid)
+                           sdf_render_level_set, sdf_render_level_set_grid,
+                           sdf_render_level_set_side_to_side)
+from util.sdf.similarity import compare_sdf, compare_sdf_batch
 
 # Set seeds for reproducibility
 np.random.seed(42)
@@ -529,3 +531,182 @@ for model_name, grid_path, anim_path in visualization_paths:
     print(f"  - {model_name}:")
     print(f"    - Grid: {grid_path}")
     print(f"    - Animation: {anim_path}")
+
+# %% [markdown]
+# ## Generate Side-by-Side Comparisons with Ground Truth
+# 
+# For each trained model, we'll create side-by-side comparisons with ground truth shapes to visually 
+# assess how well the model learned different shapes across its parameter range.
+# 
+# We'll also calculate similarity metrics between the learned and ground truth shapes.
+
+# %%
+def create_ground_truth_sdf(shape_idx, shape_param_value):
+    """Create ground truth SDF function for a specific shape and parameter value.
+    
+    Args:
+        shape_idx: Index of the shape type (0-12)
+        shape_param_value: Shape parameter value
+        
+    Returns:
+        SDF function for the specified shape
+    """
+    def ground_truth_sdf(points):
+        # Reshape if needed
+        original_shape = points.shape
+        if len(original_shape) > 2:
+            points = points.reshape(-1, original_shape[-1])
+        
+        # Calculate SDF based on shape index
+        if shape_idx == 0:  # Sphere
+            center = np.array([0, 0, 0])
+            radius = 0.5
+            distances = sdf_sphere(points, center, radius)
+        elif shape_idx == 1:  # Pill
+            p1 = np.array([-0.5, 0, 0])
+            p2 = np.array([0.5, 0, 0])
+            radius = 0.3
+            distances = sdf_pill(points, p1, p2, radius)
+        elif shape_idx == 2:  # Box
+            center = np.array([0, 0, 0])
+            dimensions = np.array([0.8, 0.8, 0.8])
+            distances = sdf_box(points, center, dims=dimensions)
+        elif shape_idx == 3:  # Torus
+            center = np.array([0, 0, 0])
+            major_radius = 0.5
+            minor_radius = 0.2
+            distances = sdf_torus(points, center, r_major=major_radius, r_minor=minor_radius)
+        elif shape_idx == 4:  # Cylinder
+            center = np.array([0, 0, 0])
+            radius = 0.3
+            height = 1.0
+            distances = sdf_cylinder(points, center, radius, height)
+        elif shape_idx == 5:  # Cone
+            tip = np.array([0, 0.5, 0])
+            base_center = np.array([0, -0.5, 0])
+            radius = 0.5
+            distances = sdf_cone(points, tip, base_center, radius)
+        elif shape_idx == 6:  # Octahedron
+            center = np.array([0, 0, 0])
+            radius = 0.7
+            distances = sdf_octahedron(points, center, radius)
+        elif shape_idx == 7:  # Pyramid
+            tip = np.array([0, 0.5, 0])
+            base_center = np.array([0, -0.5, 0])
+            base_size = 0.8
+            distances = sdf_pyramid(points, tip, base_center, base_size)
+        elif shape_idx == 8:  # Hexagonal Prism
+            center = np.array([0, 0, 0])
+            radius = 0.5
+            height = 0.8
+            distances = sdf_hexagonal_prism(points, center, radius, height)
+        elif shape_idx == 9:  # Ellipsoid
+            center = np.array([0, 0, 0])
+            radii = np.array([0.7, 0.4, 0.5])
+            distances = sdf_ellipsoid(points, center, radii)
+        elif shape_idx == 10:  # Rounded Box
+            center = np.array([0, 0, 0])
+            dimensions = np.array([0.8, 0.8, 0.8])
+            radius = 0.1
+            distances = sdf_rounded_box(points, center, dimensions, radius)
+        elif shape_idx == 11:  # Link
+            center = np.array([0, 0, 0])
+            r_major = 0.3
+            r_minor = 0.1
+            length = 0.6
+            distances = sdf_link(points, center, r_major, r_minor, length)
+        else:  # shape_idx == 12, Star
+            center = np.array([0, 0, 0])
+            n_points = 5
+            r_outer = 0.7
+            r_inner = 0.3
+            thickness = 0.2
+            distances = sdf_star(points, center, n_points, r_outer, r_inner, thickness)
+        
+        # Reshape back to original if needed
+        if len(original_shape) > 2:
+            distances = distances.reshape(original_shape[:-1])
+            
+        return distances
+    
+    return ground_truth_sdf
+
+def generate_side_by_side_comparison(model, model_name, shape_range):
+    """Generate side-by-side comparison between learned model and ground truth.
+    
+    Args:
+        model: Trained FCNN model
+        model_name: Name of the model
+        shape_range: Shape parameter range as (min, max)
+    """
+    # Set up reports directory
+    reports_dir = get_reports_dir('fcnn_range_models')
+    
+    # Create rendering configuration
+    config = CSGRenderConfig(
+        grid_size=50,  # Reduced for faster rendering
+        resolution=50,  # Reduced for faster rendering
+        image_size=(400, 400)
+    )
+    
+    # Create output path
+    comparison_filename = f"{model_name}_comparison.png"
+    comparison_path = os.path.join(reports_dir, comparison_filename)
+    
+    # Skip if file already exists
+    if os.path.exists(comparison_path):
+        print(f"Side-by-side comparison already exists at {comparison_path}, skipping...")
+        return comparison_path
+    
+    # Create level set function from model
+    model_level_set_func = create_model_level_set_function(model)
+    
+    # Create shape indices and parameter values
+    shape_min, shape_max = shape_range
+    num_shapes = 13  # Number of distinct shapes
+    
+    # Map discrete shape indices to continuous range
+    shape_values = np.linspace(shape_min, shape_max, num_shapes)
+    
+    # Create target SDF functions
+    target_sdfs = []
+    for i in range(num_shapes):
+        target_sdfs.append(create_ground_truth_sdf(i, shape_values[i]))
+    
+    # Calculate similarity metrics
+    print(f"Calculating similarity metrics for {model_name}...")
+    iou_values = compare_sdf_batch(model_level_set_func, target_sdfs, shape_values, method='iou')
+    mse_values = compare_sdf_batch(model_level_set_func, target_sdfs, shape_values, method='mse')
+    
+    # Prepare metrics for display
+    metrics = [
+        ('IoU', iou_values),
+        ('MSE', mse_values)
+    ]
+    
+    # Generate side-by-side comparison
+    print(f"Generating side-by-side comparison for {model_name}...")
+    config.save_path = comparison_path
+    sdf_render_level_set_side_to_side(
+        model_level_set_func, target_sdfs, shape_values, config, metrics
+    )
+    
+    return comparison_path
+
+# %%
+# Generate side-by-side comparisons for all models
+comparison_paths = []
+
+print("\n\nGenerating side-by-side comparisons:")
+for model, model_name, shape_range in trained_models:
+    print(f"\n{'='*50}")
+    print(f"Generating comparison for {model_name} (range {shape_range})")
+    print(f"{'='*50}")
+    
+    comparison_path = generate_side_by_side_comparison(model, model_name, shape_range)
+    comparison_paths.append((model_name, comparison_path))
+
+print("\n\nAll comparisons generated!")
+print("Comparison paths:")
+for model_name, path in comparison_paths:
+    print(f"  - {model_name}: {path}")
