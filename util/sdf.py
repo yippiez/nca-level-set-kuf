@@ -240,3 +240,142 @@ def sdf_render(sdf_func, grid_size=50, bounds=(-1, 1), threshold=0.0, n_frames=3
     plt.close(fig)
     
     return anim
+
+
+def sdf_render_4d(model, shape_values=None, grid_size=30, bounds=(-1, 1), figsize=(20, 16), save_path=None):
+    """
+    Render a 4D SDF function (x, y, z, shape) -> distance as a grid of 3D visualizations.
+    
+    Args:
+        model: A neural network model that takes inputs of shape (N, 4) where the last 
+               dimension is the shape parameter, and outputs distances of shape (N, 1)
+        shape_values: List of shape values to visualize. If None, defaults to visualizing
+                      shapes 0-4 in a 5x5 grid with intermediate values
+        grid_size: Number of points along each dimension in the 3D grid
+        bounds: Tuple (min, max) for the bounds of the grid in x, y, z dimensions
+        figsize: Figure size for the entire plot
+        save_path: Path to save the resulting image (if None, just displays it)
+        
+    Returns:
+        The created figure
+    """
+    import torch
+    import matplotlib.pyplot as plt
+    from matplotlib import cm
+    from mpl_toolkits.mplot3d import Axes3D
+    from matplotlib.patches import Rectangle
+    
+    # Default to a 5x5 grid of shape values from 0 to 4
+    if shape_values is None:
+        rows, cols = 5, 5
+        shape_values = np.linspace(0, 4, rows * cols)
+    else:
+        total_shapes = len(shape_values)
+        rows = int(np.ceil(np.sqrt(total_shapes)))
+        cols = int(np.ceil(total_shapes / rows))
+    
+    # Create figure with subplots
+    fig = plt.figure(figsize=figsize)
+    fig.suptitle('4D SDF Visualization: (x, y, z, shape) → distance', fontsize=16, fontweight='bold')
+    
+    # Create a 3D grid for spatial coordinates
+    x = np.linspace(bounds[0], bounds[1], grid_size)
+    y = np.linspace(bounds[0], bounds[1], grid_size)
+    z = np.linspace(bounds[0], bounds[1], grid_size)
+    X, Y, Z = np.meshgrid(x, y, z, indexing='ij')
+    
+    # Visualization at z=0 slice for clarity
+    z_slice = grid_size // 2
+    X_slice = X[:, :, z_slice]
+    Y_slice = Y[:, :, z_slice]
+    
+    # Device handling for PyTorch
+    device = next(model.parameters()).device
+    
+    for idx, shape_value in enumerate(shape_values):
+        if idx >= rows * cols:
+            break
+            
+        # Calculate subplot position
+        row = idx // cols
+        col = idx % cols
+        
+        # Create subplot
+        ax = fig.add_subplot(rows, cols, idx + 1)
+        
+        # Prepare inputs for the model (x, y, z=0, shape)
+        points_2d = np.stack([X_slice.flatten(), Y_slice.flatten(), 
+                              np.zeros_like(X_slice.flatten())], axis=-1)
+        shape_indices = np.ones((len(points_2d), 1)) * shape_value
+        inputs = np.hstack([points_2d, shape_indices])
+        
+        # Convert to PyTorch tensor and get predictions
+        inputs_tensor = torch.FloatTensor(inputs).to(device)
+        
+        with torch.no_grad():
+            distances = model(inputs_tensor).cpu().numpy().reshape(X_slice.shape)
+        
+        # Create contour plot
+        levels = 20
+        contour_filled = ax.contourf(X_slice, Y_slice, distances, levels=levels, cmap='viridis')
+        
+        # Add zero-level contour in red
+        zero_contour = ax.contour(X_slice, Y_slice, distances, levels=[0], colors='red', linewidths=2)
+        
+        # Add some additional level contours for context
+        level_contours = ax.contour(X_slice, Y_slice, distances, 
+                                    levels=[-0.2, -0.1, 0.1, 0.2], 
+                                    colors='white', linewidths=0.5, alpha=0.5)
+        
+        # Add title with shape value
+        shape_label = f's={shape_value:.1f}' if shape_value % 1 != 0 else f's={int(shape_value)}'
+        ax.set_title(shape_label, fontsize=14, fontweight='bold')
+        
+        # Add shape descriptor if it's one of the primary shapes
+        shape_names = {0: 'Pill', 1: 'Cylinder', 2: 'Box', 3: 'Torus'}
+        if int(shape_value) == shape_value and shape_value in shape_names:
+            ax.text(0.95, 0.95, shape_names[int(shape_value)], 
+                    transform=ax.transAxes, 
+                    verticalalignment='top', 
+                    horizontalalignment='right',
+                    bbox=dict(boxstyle='round,pad=0.3', facecolor='yellow', alpha=0.7),
+                    fontsize=10)
+        
+        # Configure axes
+        ax.set_xlim(bounds)
+        ax.set_ylim(bounds)
+        ax.set_aspect('equal')
+        
+        # Only show axis labels for edge plots
+        if row == rows - 1:
+            ax.set_xlabel('X')
+        else:
+            ax.set_xticklabels([])
+            
+        if col == 0:
+            ax.set_ylabel('Y')
+        else:
+            ax.set_yticklabels([])
+        
+        # Add a small axis indicator
+        ax.text(0.02, 0.98, f'z=0', transform=ax.transAxes, 
+                verticalalignment='top', horizontalalignment='left',
+                bbox=dict(boxstyle='round,pad=0.2', facecolor='white', alpha=0.7),
+                fontsize=8)
+    
+    # Add a colorbar to the entire figure
+    cbar_ax = fig.add_axes([0.92, 0.15, 0.02, 0.7])
+    sm = plt.cm.ScalarMappable(cmap='viridis')
+    sm.set_array(distances)
+    cbar = fig.colorbar(sm, cax=cbar_ax)
+    cbar.set_label('SDF Value', rotation=270, labelpad=20, fontsize=12)
+    
+    plt.tight_layout()
+    plt.subplots_adjust(right=0.9)
+    
+    # Save if requested
+    if save_path:
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        print(f"4D SDF visualization saved to {save_path}")
+    
+    return fig
