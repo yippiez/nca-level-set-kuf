@@ -9,7 +9,8 @@
       "Bash(uv add:*)",
       "Bash(uv run:*)",
       "Bash(mkdir:*)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "Bash(uv lock:*)"
     ],
     "deny": []
   }

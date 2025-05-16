@@ -94,8 +94,7 @@ config = CSGRenderConfig(
     bounds=(-1.5, 1.5),
     save_path=str(OUTPUT_DIR / "sphere_csg.png"),
     image_size=(800, 800),
-    camera_rotation=(45, 20, 0),
-    show_edges=True
+    camera_rotation=(45, 20, 0)
 )
 
 try:
@@ -251,8 +250,7 @@ gif_config = CSGRenderConfig(
     save_path=str(OUTPUT_DIR / "combined_rotating_csg.gif"),
     image_size=(600, 600),
     n_frames=36,
-    fps=15,
-    show_edges=True
+    fps=15
 )
 
 try:

@@ -73,7 +73,5 @@ class CSGRenderConfig(BaseModel):
     camera_distance: float = 10
     resolution: int = 100
     colorscheme: Optional[str] = "Cornfield"
-    dpi: int = 150
     n_frames: int = 36
     fps: int = 15
-    show_edges: bool = True

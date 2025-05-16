@@ -13,8 +13,7 @@ from .definitions import (
 # Import CSG rendering functions
 from .render import (
     sdf_render_csg,
-    sdf_render_csg_animation,
-    sdf_to_mesh
+    sdf_render_csg_animation
 )
 
 __all__ = [
@@ -27,6 +26,5 @@ __all__ = [
     'sdf_render',
     'sdf_render_level_set',
     'sdf_render_csg',
-    'sdf_render_csg_animation',
-    'sdf_to_mesh'
+    'sdf_render_csg_animation'
 ]

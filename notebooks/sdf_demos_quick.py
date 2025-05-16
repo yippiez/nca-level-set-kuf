@@ -41,8 +41,7 @@ config = CSGRenderConfig(
     save_path=str(OUTPUT_DIR / "sphere_csg.png"),
     image_size=(800, 800),
     camera_rotation=(45, 20, 0),
-    colorscheme="Cornfield",
-    show_edges=True
+    colorscheme="Cornfield"
 )
 
 print("Rendering sphere...")

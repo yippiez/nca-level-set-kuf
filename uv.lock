@@ -343,9 +343,7 @@ dependencies = [
     { name = "pillow" },
     { name = "pydantic" },
     { name = "scikit-image" },
-    { name = "solidpython2" },
     { name = "torch" },
-    { name = "trimesh" },
 ]
 
 [package.optional-dependencies]
@@ -363,9 +361,7 @@ requires-dist = [
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0.0" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.0.0" },
     { name = "scikit-image", specifier = ">=0.25.2" },
-    { name = "solidpython2", specifier = ">=2.0.0" },
     { name = "torch", specifier = ">=2.7.0" },
-    { name = "trimesh", specifier = ">=4.0.0" },
 ]
 provides-extras = ["dev"]
 
@@ -587,15 +583,6 @@ wheels = [
 ]
 
 [[package]]
-name = "ply"
-version = "3.11"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/e5/69/882ee5c9d017149285cab114ebeab373308ef0f874fcdac9beb90e0ac4da/ply-3.11.tar.gz", hash = "sha256:00c7c1aaa88358b9c765b6d3000c6eec0ba42abca5351b095321aef446081da3", size = 159130, upload-time = "2018-02-15T19:01:31.097Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/a3/58/35da89ee790598a0700ea49b2a66594140f44dec458c07e8e3d4979137fc/ply-3.11-py2.py3-none-any.whl", hash = "sha256:096f9b8350b65ebd2fd1346b12452efe5b9607f7482813ffca50c22722a807ce", size = 49567, upload-time = "2018-02-15T19:01:27.172Z" },
-]
-
-[[package]]
 name = "pydantic"
 version = "2.11.4"
 source = { registry = "https://pypi.org/simple" }
@@ -787,19 +774,6 @@ wheels = [
 ]
 
 [[package]]
-name = "solidpython2"
-version = "2.1.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "ply" },
-    { name = "setuptools" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/f8/1c/be57ba2608297a2d3ce9fde31d6b933504e568ce8019612492dd35efa898/solidpython2-2.1.1.tar.gz", hash = "sha256:2a4cebf46d9094f3815b6e3505ea11913d79a79da5026d262bef547d25651ac8", size = 1045377, upload-time = "2025-02-03T10:23:16.342Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/7d/e9/91e5772965f739bbb1fa7e38524c9b9d0d5dfcdcbe1236802d255bea30b8/solidpython2-2.1.1-py3-none-any.whl", hash = "sha256:a21b25632011e6f329df6af839edbadd47f0533d88763f9d748b4a37d18fca8d", size = 1127303, upload-time = "2025-02-03T10:23:12.869Z" },
-]
-
-[[package]]
 name = "sympy"
 version = "1.14.0"
 source = { registry = "https://pypi.org/simple" }
@@ -864,18 +838,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/9d/f5/0bd30e9da04c3036614aa1b935a9f7e505a9e4f1f731b15e165faf8a4c74/torch-2.7.0-cp313-cp313t-manylinux_2_28_x86_64.whl", hash = "sha256:176300ff5bc11a5f5b0784e40bde9e10a35c4ae9609beed96b4aeb46a27f5fae", size = 865104023, upload-time = "2025-04-23T14:30:40.537Z" },
     { url = "https://files.pythonhosted.org/packages/d1/b7/2235d0c3012c596df1c8d39a3f4afc1ee1b6e318d469eda4c8bb68566448/torch-2.7.0-cp313-cp313t-win_amd64.whl", hash = "sha256:d0ca446a93f474985d81dc866fcc8dccefb9460a29a456f79d99c29a78a66993", size = 212750916, upload-time = "2025-04-23T14:32:22.91Z" },
     { url = "https://files.pythonhosted.org/packages/90/48/7e6477cf40d48cc0a61fa0d41ee9582b9a316b12772fcac17bc1a40178e7/torch-2.7.0-cp313-none-macosx_11_0_arm64.whl", hash = "sha256:27f5007bdf45f7bb7af7f11d1828d5c2487e030690afb3d89a651fd7036a390e", size = 68575074, upload-time = "2025-04-23T14:32:38.136Z" },
-]
-
-[[package]]
-name = "trimesh"
-version = "4.6.9"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "numpy" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/81/eb/97e294d84b3e3714819f7e187a56fcfa3eb4d9cd5f78aa894c123b9aa6dd/trimesh-4.6.9.tar.gz", hash = "sha256:c46ee5b9edabf0d613ff582ac8ec466db78c998a4f6992dfd3f45dbf49f25fb1", size = 801502, upload-time = "2025-05-13T19:48:58.761Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/b8/e9/8039609d4fbb7ad827a909c24b2107db89d3b8b5ffdacc548ed399b2bf04/trimesh-4.6.9-py3-none-any.whl", hash = "sha256:b1938c3bea3a80ab419e269601f95c1d1c68d23573ab139c9bd75e450c2b7b4d", size = 711087, upload-time = "2025-05-13T19:48:56.251Z" },
 ]
 
 [[package]]

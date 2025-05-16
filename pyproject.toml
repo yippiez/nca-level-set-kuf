@@ -11,8 +11,6 @@ dependencies = [
     "pydantic>=2.11.4",
     "scikit-image>=0.25.2",
     "torch>=2.7.0",
-    "solidpython2>=2.0.0",
-    "trimesh>=4.0.0",
 ]
 
 [project.optional-dependencies]
