@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 # Import our modules
 from models.fcnn import FCNN
 from util.cache import cache_get_torch, cache_get_json, cache_get_pickle
-from util.sdf import sdf_render_4d
+from util.sdf import sdf_render_level_set
 import pathlib
 
 # Get project root
@@ -112,17 +112,17 @@ for shape in shape_values:
         print(f"    Point {i}: {distance[0]:.4f}")
 
 # %% [markdown]
-# ## Visualize the 4D SDF Function
+# ## Visualize the 3D Level Sets
 
 # %%
-# Create the 4D visualization with default 5x5 grid
-fig = sdf_render_4d(
+# Create the 3D level set visualization with default 5x5 grid
+fig = sdf_render_level_set(
     model,
     shape_values=None,  # Use default 5x5 grid
     grid_size=50,
     bounds=(-1.5, 1.5),
     figsize=(20, 16),
-    save_path=str(PROJECT_ROOT / 'reports' / 'sdf' / 'sdf_4d_visualization_default.png')
+    save_path=str(PROJECT_ROOT / 'reports' / 'sdf' / 'sdf_level_set_default.png')
 )
 plt.show()
 
@@ -132,84 +132,42 @@ plt.show()
 # %%
 # Visualize specific shape values including s=0 and s=0.5
 specific_shapes = [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4]
-fig_specific = sdf_render_4d(
+fig_specific = sdf_render_level_set(
     model,
     shape_values=specific_shapes,
     grid_size=50,
     bounds=(-1.5, 1.5),
     figsize=(15, 15),
-    save_path=str(PROJECT_ROOT / 'reports' / 'sdf' / 'sdf_4d_visualization_specific.png')
+    save_path=str(PROJECT_ROOT / 'reports' / 'sdf' / 'sdf_level_set_specific.png')
 )
 plt.show()
 
 # %% [markdown]
-# ## Detailed Comparison for s=0 and s=0.5
+# ## Detailed 3D Comparison for s=0 and s=0.5
 
 # %%
-# Focus on just s=0 and s=0.5 for detailed comparison
+# Focus on just s=0 and s=0.5 for detailed 3D comparison
 comparison_shapes = [0, 0.5]
-fig_comparison = plt.figure(figsize=(12, 6))
-
-for idx, shape_value in enumerate(comparison_shapes):
-    ax = fig_comparison.add_subplot(1, 2, idx + 1)
-    
-    # Create a finer grid for detailed visualization
-    grid_size = 100
-    x = np.linspace(-1.5, 1.5, grid_size)
-    y = np.linspace(-1.5, 1.5, grid_size)
-    X, Y = np.meshgrid(x, y)
-    
-    # z=0 slice
-    Z = np.zeros_like(X)
-    
-    # Prepare inputs
-    points = np.stack([X.flatten(), Y.flatten(), Z.flatten()], axis=-1)
-    shape_indices = np.ones((len(points), 1)) * shape_value
-    inputs = np.hstack([points, shape_indices])
-    
-    # Get predictions
-    inputs_tensor = torch.FloatTensor(inputs).to(device)
-    with torch.no_grad():
-        distances = model(inputs_tensor).cpu().numpy().reshape(X.shape)
-    
-    # Create visualization
-    contour_filled = ax.contourf(X, Y, distances, levels=30, cmap='viridis')
-    zero_contour = ax.contour(X, Y, distances, levels=[0], colors='red', linewidths=3)
-    
-    # Add other level contours
-    level_contours = ax.contour(X, Y, distances, 
-                               levels=[-0.3, -0.2, -0.1, 0.1, 0.2, 0.3], 
-                               colors='white', linewidths=1, alpha=0.7)
-    ax.clabel(level_contours, inline=True, fontsize=8)
-    
-    ax.set_title(f's={shape_value}', fontsize=16, fontweight='bold')
-    ax.set_xlabel('X')
-    ax.set_ylabel('Y')
-    ax.set_aspect('equal')
-    
-    # Add shape name
-    shape_names = {0: 'Pill', 0.5: 'Pill→Cylinder'}
-    if shape_value in shape_names:
-        ax.text(0.95, 0.95, shape_names[shape_value], 
-                transform=ax.transAxes, 
-                verticalalignment='top', 
-                horizontalalignment='right',
-                bbox=dict(boxstyle='round,pad=0.3', facecolor='yellow', alpha=0.8),
-                fontsize=12)
-
-fig_comparison.tight_layout()
-plt.savefig(str(PROJECT_ROOT / 'reports' / 'sdf' / 'sdf_4d_comparison_s0_s0.5.png'), dpi=300, bbox_inches='tight')
+fig_comparison = sdf_render_level_set(
+    model,
+    shape_values=comparison_shapes,
+    grid_size=80,  # Higher resolution for detail
+    bounds=(-1.5, 1.5),
+    figsize=(12, 6),
+    save_path=str(PROJECT_ROOT / 'reports' / 'sdf' / 'sdf_level_set_comparison_s0_s0.5.png')
+)
 plt.show()
+
 
 # %% [markdown]
 # ## Summary
 # 
-# The 4D SDF model has been successfully loaded from cache and visualized using the new `sdf_render_4d` function. 
+# The 4D SDF model has been successfully loaded from cache and visualized using the new `sdf_render_level_set` function. 
 # The visualizations show:
 # 
-# 1. A 5x5 grid of shape interpolations from s=0 (Pill) to s=4 (beyond Torus)
+# 1. A 5x5 grid of 3D shapes from s=0 (Pill) to s=4 (beyond Torus)
 # 2. Specific shape values including fractional values like s=0.5
-# 3. Detailed comparison between s=0 and s=0.5
+# 3. Detailed 3D comparison between s=0 and s=0.5
 # 
-# The model successfully learned to interpolate between different SDF shapes, creating smooth transitions 
-# between the discrete shape types it was trained on.
+# The model successfully learned to interpolate between different SDF shapes, creating smooth 3D surfaces 
+# for arbitrary shape parameter values.

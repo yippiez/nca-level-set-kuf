@@ -242,9 +242,10 @@ def sdf_render(sdf_func, grid_size=50, bounds=(-1, 1), threshold=0.0, n_frames=3
     return anim
 
 
-def sdf_render_4d(model, shape_values=None, grid_size=30, bounds=(-1, 1), figsize=(20, 16), save_path=None):
+def sdf_render_level_set(model, shape_values=None, grid_size=50, bounds=(-1, 1), figsize=(20, 16), save_path=None):
     """
-    Render a 4D SDF function (x, y, z, shape) -> distance as a grid of 3D visualizations.
+    Render 3D level sets of a 4D SDF function (x, y, z, shape) -> distance.
+    Creates a grid of 3D visualizations, each showing the zero level set for a different shape parameter.
     
     Args:
         model: A neural network model that takes inputs of shape (N, 4) where the last 
@@ -261,11 +262,10 @@ def sdf_render_4d(model, shape_values=None, grid_size=30, bounds=(-1, 1), figsiz
     """
     import torch
     import matplotlib.pyplot as plt
-    from matplotlib import cm
     from mpl_toolkits.mplot3d import Axes3D
-    from matplotlib.patches import Rectangle
+    from skimage.measure import marching_cubes
     
-    # Default to a 5x5 grid of shape values from 0 to 4
+    # Default to a 5x5 grid of shape values
     if shape_values is None:
         rows, cols = 5, 5
         shape_values = np.linspace(0, 4, rows * cols)
@@ -276,7 +276,7 @@ def sdf_render_4d(model, shape_values=None, grid_size=30, bounds=(-1, 1), figsiz
     
     # Create figure with subplots
     fig = plt.figure(figsize=figsize)
-    fig.suptitle('4D SDF Visualization: (x, y, z, shape) → distance', fontsize=16, fontweight='bold')
+    fig.suptitle('3D Level Sets of 4D SDF: (x, y, z, shape) → distance', fontsize=16, fontweight='bold')
     
     # Create a 3D grid for spatial coordinates
     x = np.linspace(bounds[0], bounds[1], grid_size)
@@ -284,13 +284,18 @@ def sdf_render_4d(model, shape_values=None, grid_size=30, bounds=(-1, 1), figsiz
     z = np.linspace(bounds[0], bounds[1], grid_size)
     X, Y, Z = np.meshgrid(x, y, z, indexing='ij')
     
-    # Visualization at z=0 slice for clarity
-    z_slice = grid_size // 2
-    X_slice = X[:, :, z_slice]
-    Y_slice = Y[:, :, z_slice]
+    # Reshape grid for model input
+    points = np.stack([X.flatten(), Y.flatten(), Z.flatten()], axis=-1)
     
     # Device handling for PyTorch
     device = next(model.parameters()).device
+    
+    # Calculate spacing for marching cubes
+    spacing = (
+        (bounds[1] - bounds[0]) / (grid_size - 1),
+        (bounds[1] - bounds[0]) / (grid_size - 1),
+        (bounds[1] - bounds[0]) / (grid_size - 1)
+    )
     
     for idx, shape_value in enumerate(shape_values):
         if idx >= rows * cols:
@@ -300,82 +305,86 @@ def sdf_render_4d(model, shape_values=None, grid_size=30, bounds=(-1, 1), figsiz
         row = idx // cols
         col = idx % cols
         
-        # Create subplot
-        ax = fig.add_subplot(rows, cols, idx + 1)
+        # Create 3D subplot
+        ax = fig.add_subplot(rows, cols, idx + 1, projection='3d')
         
-        # Prepare inputs for the model (x, y, z=0, shape)
-        points_2d = np.stack([X_slice.flatten(), Y_slice.flatten(), 
-                              np.zeros_like(X_slice.flatten())], axis=-1)
-        shape_indices = np.ones((len(points_2d), 1)) * shape_value
-        inputs = np.hstack([points_2d, shape_indices])
+        # Prepare inputs for the model
+        shape_indices = np.ones((len(points), 1)) * shape_value
+        inputs = np.hstack([points, shape_indices])
         
         # Convert to PyTorch tensor and get predictions
         inputs_tensor = torch.FloatTensor(inputs).to(device)
         
         with torch.no_grad():
-            distances = model(inputs_tensor).cpu().numpy().reshape(X_slice.shape)
+            distances = model(inputs_tensor).cpu().numpy().reshape(X.shape)
         
-        # Create contour plot
-        levels = 20
-        contour_filled = ax.contourf(X_slice, Y_slice, distances, levels=levels, cmap='viridis')
+        try:
+            # Use marching cubes to extract the zero level set
+            verts, faces, normals, _ = marching_cubes(
+                distances, 
+                level=0.0,
+                spacing=spacing
+            )
+            
+            # Shift from grid coordinates to world coordinates
+            verts = verts + np.array([bounds[0], bounds[0], bounds[0]])
+            
+            # Create the mesh plot
+            ax.plot_trisurf(verts[:, 0], verts[:, 1], triangles=faces, Z=verts[:, 2], 
+                           cmap='viridis', edgecolor='none', alpha=0.8)
+        except ValueError:
+            # If marching cubes fails (no zero crossing), show empty plot
+            ax.text(0.5, 0.5, 0.5, 'No surface', 
+                   horizontalalignment='center',
+                   verticalalignment='center',
+                   transform=ax.transAxes)
         
-        # Add zero-level contour in red
-        zero_contour = ax.contour(X_slice, Y_slice, distances, levels=[0], colors='red', linewidths=2)
-        
-        # Add some additional level contours for context
-        level_contours = ax.contour(X_slice, Y_slice, distances, 
-                                    levels=[-0.2, -0.1, 0.1, 0.2], 
-                                    colors='white', linewidths=0.5, alpha=0.5)
+        # Configure 3D axes
+        ax.set_xlim(bounds)
+        ax.set_ylim(bounds)
+        ax.set_zlim(bounds)
+        ax.set_box_aspect([1, 1, 1])
         
         # Add title with shape value
         shape_label = f's={shape_value:.1f}' if shape_value % 1 != 0 else f's={int(shape_value)}'
-        ax.set_title(shape_label, fontsize=14, fontweight='bold')
+        ax.set_title(shape_label, fontsize=12, fontweight='bold', pad=1)
         
         # Add shape descriptor if it's one of the primary shapes
         shape_names = {0: 'Pill', 1: 'Cylinder', 2: 'Box', 3: 'Torus'}
         if int(shape_value) == shape_value and shape_value in shape_names:
-            ax.text(0.95, 0.95, shape_names[int(shape_value)], 
-                    transform=ax.transAxes, 
-                    verticalalignment='top', 
-                    horizontalalignment='right',
-                    bbox=dict(boxstyle='round,pad=0.3', facecolor='yellow', alpha=0.7),
-                    fontsize=10)
+            ax.text2D(0.95, 0.95, shape_names[int(shape_value)], 
+                     transform=ax.transAxes,
+                     verticalalignment='top', 
+                     horizontalalignment='right',
+                     bbox=dict(boxstyle='round,pad=0.3', facecolor='yellow', alpha=0.7),
+                     fontsize=10)
         
-        # Configure axes
-        ax.set_xlim(bounds)
-        ax.set_ylim(bounds)
-        ax.set_aspect('equal')
+        # Set viewing angle
+        ax.view_init(elev=20, azim=45)
         
         # Only show axis labels for edge plots
         if row == rows - 1:
-            ax.set_xlabel('X')
+            ax.set_xlabel('X', fontsize=10)
         else:
             ax.set_xticklabels([])
             
         if col == 0:
-            ax.set_ylabel('Y')
+            ax.set_ylabel('Y', fontsize=10)
         else:
             ax.set_yticklabels([])
+            
+        ax.set_zlabel('Z', fontsize=10)
         
-        # Add a small axis indicator
-        ax.text(0.02, 0.98, f'z=0', transform=ax.transAxes, 
-                verticalalignment='top', horizontalalignment='left',
-                bbox=dict(boxstyle='round,pad=0.2', facecolor='white', alpha=0.7),
-                fontsize=8)
-    
-    # Add a colorbar to the entire figure
-    cbar_ax = fig.add_axes([0.92, 0.15, 0.02, 0.7])
-    sm = plt.cm.ScalarMappable(cmap='viridis')
-    sm.set_array(distances)
-    cbar = fig.colorbar(sm, cax=cbar_ax)
-    cbar.set_label('SDF Value', rotation=270, labelpad=20, fontsize=12)
+        # Reduce tick labels to avoid clutter
+        ax.set_xticks([-1, 0, 1])
+        ax.set_yticks([-1, 0, 1])
+        ax.set_zticks([-1, 0, 1])
     
     plt.tight_layout()
-    plt.subplots_adjust(right=0.9)
     
     # Save if requested
     if save_path:
         plt.savefig(save_path, dpi=300, bbox_inches='tight')
-        print(f"4D SDF visualization saved to {save_path}")
+        print(f"Level set visualization saved to {save_path}")
     
     return fig
