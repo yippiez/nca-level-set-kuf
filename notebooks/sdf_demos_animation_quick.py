@@ -54,7 +54,7 @@ print(f"Sphere animation saved to: {sphere_gif}")
 # Create an animation of a sphere with box subtracted
 def sphere_minus_box(points):
     sphere = sdf_sphere(points, center=np.array([0.0, 0.0, 0.0]), radius=0.8)
-    box = sdf_box(points, center=np.array([0.0, 0.0, 0.0]), dims=np.array([0.6, 0.6, 1.2]))
+    box = sdf_box(points, center=np.array([0.0, 0.0, 0.0]), dims=np.array([0.6, 0.6, 2.0]))
     # Subtraction: max(sphere, -box)
     return np.maximum(sphere, -box)
 
