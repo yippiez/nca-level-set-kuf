@@ -14,7 +14,7 @@ from util.paths import get_reports_dir, get_project_root
 import os
 
 # Create output directory
-OUTPUT_DIR = get_reports_dir("level_set_demos")
+OUTPUT_DIR = get_reports_dir("sdf_level_set_demos")
 
 # %% [markdown]
 # ## Define a 4D SDF that morphs between sphere and box
@@ -54,7 +54,7 @@ config = CSGRenderConfig(
 )
 
 # Create morphing animation
-shape_values = np.linspace(0, 1, config.n_frames)
+shape_values = np.linspace(0, 4, config.n_frames)
 gif_path = sdf_render_level_set(morphing_sdf, config, shape_values)
 print(f"Saved morphing animation to: {gif_path}")
 
@@ -74,7 +74,7 @@ config_grid = CSGRenderConfig(
 )
 
 # Create grid with different shape values
-shape_values_grid = [0.0, 0.25, 0.5, 0.75, 1.0]
+shape_values_grid = [0.0, 1.0, 2.0, 3.0, 4.0]
 grid_path = sdf_render_level_set_grid(morphing_sdf, config_grid, shape_values_grid)
 print(f"Saved morphing grid to: {grid_path}")
 
@@ -136,7 +136,7 @@ print(f"Saved sphere to torus grid to: {grid_path_torus}")
 def ease_in_out(t):
     return t * t * (3 - 2 * t)
 
-custom_shape_values = ease_in_out(np.linspace(0, 1, 40))
+custom_shape_values = ease_in_out(np.linspace(0, 1, 40)) * 4
 
 config_custom = CSGRenderConfig(
     grid_size=60,

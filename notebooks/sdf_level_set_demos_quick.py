@@ -13,7 +13,7 @@ from util.types import CSGRenderConfig
 from util.paths import get_reports_dir
 
 # Create output directory
-OUTPUT_DIR = get_reports_dir("level_set_demos_quick")
+OUTPUT_DIR = get_reports_dir("sdf_level_set_demos_quick")
 
 # %% [markdown]
 # ## Simple Morphing Test
@@ -68,7 +68,7 @@ config_grid = CSGRenderConfig(
 )
 
 # Test grid with just 3 values
-shape_values_grid = [0.0, 0.5, 1.0]
+shape_values_grid = [0.0, 2.0, 4.0]
 grid_path = sdf_render_level_set_grid(simple_morph_sdf, config_grid, shape_values_grid)
 print(f"Saved quick grid to: {grid_path}")
 

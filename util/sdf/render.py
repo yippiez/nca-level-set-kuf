@@ -189,7 +189,7 @@ def sdf_render_level_set(sdf_func: Callable, config: Optional[CSGRenderConfig] =
         config = CSGRenderConfig()
     
     if shape_values is None:
-        shape_values = np.linspace(0, 1, config.n_frames)
+        shape_values = np.linspace(0, 4, config.n_frames)
     
     frames = []
     original_save_path = config.save_path
@@ -265,7 +265,7 @@ def sdf_render_level_set_grid(sdf_func: Callable, config: Optional[CSGRenderConf
         config = CSGRenderConfig()
     
     if shape_values is None:
-        shape_values = [0.0, 0.25, 0.5, 0.75, 1.0]
+        shape_values = [0.0, 1.0, 2.0, 3.0, 4.0]
     
     # Calculate grid dimensions
     n_images = len(shape_values)

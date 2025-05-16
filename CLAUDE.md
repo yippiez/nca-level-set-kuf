@@ -42,8 +42,8 @@ if a computationally heavy section is present cache it in the `cache` folder for
   - `notebooks/sdf_demos.py`: Combined demonstration of SDF visualization and CSG rendering
   - `notebooks/sdf_demos_animation.py`: Demonstration of rotating CSG animations (full quality)
   - `notebooks/sdf_demos_animation_quick.py`: Quick test version of animations
-  - `notebooks/level_set_demos.py`: Demonstration of level set morphing animations and grids
-  - `notebooks/level_set_demos_quick.py`: Quick test version of level set rendering
+  - `notebooks/sdf_level_set_demos.py`: Demonstration of level set morphing animations and grids
+  - `notebooks/sdf_level_set_demos_quick.py`: Quick test version of level set rendering
   - `notebooks/fcnn_basic_v1a1.py`: FCNN training experiment for learning SDFs
 - **Tests**:
   - `tests/test_cache.py`: Tests for the cache utility module (migrated from notebook demo)
