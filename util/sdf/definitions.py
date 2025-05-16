@@ -6,7 +6,7 @@ import functools
 from skimage.measure import marching_cubes
 from typing import Union, Optional, List, Tuple
 import torch.nn as nn
-from .types import SDFRenderConfig, SDFLevelSetConfig
+from ..types import SDFRenderConfig, SDFLevelSetConfig
 
 def sdf_sphere(point: np.ndarray, center: np.ndarray, radius: float) -> Union[float, np.ndarray]:
     """Calculate the signed distance from a point to a sphere."""

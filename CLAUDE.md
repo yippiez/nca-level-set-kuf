@@ -18,14 +18,17 @@ if a computationally heavy section is present cache it in the `cache` folder for
 - *models:* Where model definitions are stored
 - *notebooks:* Where experiments are defined using notebooks
 - *reports:* Where resulting tables, figures and models are stored
+  - Files should follow the `reports/<notebook_name>/` convention
+  - Each notebook should save its outputs to its own subdirectory
 - *util:* Utility scripts like visualizations, preprocessing etc.
 
 ## Implementation Notes
-- **Signed Distance Functions (SDFs)**: Implemented in `util/sdf.py` with proper vectorization
-  - Basic shapes: `sdf_sphere`, `sdf_box`, `sdf_pill`, `sdf_torus`
+- **Signed Distance Functions (SDFs)**: Implemented in `util/sdf/` module
+  - Shape definitions in `util/sdf/definitions.py`: `sdf_sphere`, `sdf_box`, `sdf_pill`, `sdf_torus`
+  - CSG rendering in `util/sdf/render.py`: `sdf_render_csg` and `sdf_render_csg_animation`
   - Visualization: `sdf_render` function using marching cubes algorithm from scikit-image
   - Operations: Union, Intersection, and Subtraction for combining shapes
-- SDF visualizations are found in `reports/sdf/` as GIF animations
+- SDF visualizations are found in `reports/<notebook_name>/` following the folder convention
 
 ## Allowed Commands 
 ```json

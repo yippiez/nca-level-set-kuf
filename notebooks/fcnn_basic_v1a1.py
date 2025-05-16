@@ -22,6 +22,7 @@ import torch.optim as optim
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
+from util.paths import get_reports_dir
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -114,7 +115,7 @@ def generate_data(num_points_per_shape=10000):
     # Shape 2: Box
     center = np.array([0, 0, 0])
     dimensions = np.array([0.8, 0.8, 0.8])
-    distances_box = sdf_box(points, center, dimensions)
+    distances_box = sdf_box(points, center, dims=dimensions)
     shape_indices_box = np.ones((num_points_per_shape, 1)) * 2
     inputs_box = np.hstack([points, shape_indices_box])
     all_inputs.append(inputs_box)
@@ -124,7 +125,7 @@ def generate_data(num_points_per_shape=10000):
     center = np.array([0, 0, 0])
     major_radius = 0.5
     minor_radius = 0.2
-    distances_torus = sdf_torus(points, center, major_radius, minor_radius)
+    distances_torus = sdf_torus(points, center, r_major=major_radius, r_minor=minor_radius)
     shape_indices_torus = np.ones((num_points_per_shape, 1)) * 3
     inputs_torus = np.hstack([points, shape_indices_torus])
     all_inputs.append(inputs_torus)
@@ -289,12 +290,12 @@ def visualize_predictions(model, shape_type, grid_resolution=30):
     elif shape_type == 2:  # Box
         center = np.array([0, 0, 0])
         dimensions = np.array([0.8, 0.8, 0.8])
-        ground_truth = sdf_box(points, center, dimensions)
+        ground_truth = sdf_box(points, center, dims=dimensions)
     elif shape_type == 3:  # Torus
         center = np.array([0, 0, 0])
         major_radius = 0.5
         minor_radius = 0.2
-        ground_truth = sdf_torus(points, center, major_radius, minor_radius)
+        ground_truth = sdf_torus(points, center, r_major=major_radius, r_minor=minor_radius)
     
     ground_truth_grid = ground_truth.reshape(grid_resolution, grid_resolution)
     

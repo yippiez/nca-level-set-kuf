@@ -61,3 +61,19 @@ class SDFLevelSetConfig(BaseModel):
     bounds: Tuple[float, float] = (-1.0, 1.0)
     figsize: Tuple[int, int] = (20, 16)
     save_path: Optional[str] = None
+
+
+class CSGRenderConfig(BaseModel):
+    """Configuration for CSG-style rendering."""
+    grid_size: int = 100
+    bounds: Tuple[float, float] = (-1.0, 1.0)
+    save_path: Optional[str] = None
+    image_size: Tuple[int, int] = (800, 800)
+    camera_rotation: Tuple[float, float, float] = (45, 20, 0)
+    camera_distance: float = 10
+    resolution: int = 100
+    colorscheme: Optional[str] = "Cornfield"
+    dpi: int = 150
+    n_frames: int = 36
+    fps: int = 15
+    show_edges: bool = True

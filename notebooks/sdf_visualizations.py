@@ -11,6 +11,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from functools import partial
 import time
+from util.paths import get_reports_dir
 
 # Add the parent directory to the path so we can import the util module
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -23,9 +24,8 @@ from util.sdf import (
     sdf_render
 )
 
-# Set up the output directory
-OUTPUT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'reports', 'sdf')
-os.makedirs(OUTPUT_DIR, exist_ok=True)
+# Set up the output directory following notebook-specific convention
+OUTPUT_DIR = get_reports_dir('sdf_visualizations')
 
 # %% [markdown]
 # ## Helper Functions
@@ -57,9 +57,11 @@ def visualize_and_save_sdf(sdf_func, name, description):
         print(f"Animation for {name} already exists at {save_path}")
         return
     
-    # Create the animation
-    anim = sdf_render(
-        sdf_func,
+    # Import the config type for SDF rendering
+    from util.types import SDFRenderConfig
+    
+    # Create config for the animation
+    config = SDFRenderConfig(
         grid_size=50,
         bounds=(-1.5, 1.5),
         n_frames=36,
@@ -67,6 +69,9 @@ def visualize_and_save_sdf(sdf_func, name, description):
         dpi=120,
         fps=10
     )
+    
+    # Create the animation using the config
+    anim = sdf_render(sdf_func, config)
     
     print(f"Saved {name} animation to {save_path}")
 
@@ -89,7 +94,7 @@ visualize_and_save_sdf(
 
 # %%
 # Create a box SDF with center at origin and dimensions (1.0, 1.5, 0.8)
-box_func = partial(sdf_box, center=np.array([0.0, 0.0, 0.0]), dimensions=np.array([1.0, 1.5, 0.8]))
+box_func = partial(sdf_box, center=np.array([0.0, 0.0, 0.0]), dims=np.array([1.0, 1.5, 0.8]))
 
 # Visualize and save the box SDF
 visualize_and_save_sdf(
@@ -125,8 +130,8 @@ visualize_and_save_sdf(
 torus_func = partial(
     sdf_torus, 
     center=np.array([0.0, 0.0, 0.0]), 
-    major_radius=0.8, 
-    minor_radius=0.2
+    r_major=0.8, 
+    r_minor=0.2
 )
 
 # Visualize and save the torus SDF
@@ -190,7 +195,7 @@ def sdf_subtraction(point, base_func, subtract_func):
 sphere_with_box_cut = partial(
     sdf_subtraction,
     base_func=partial(sdf_sphere, center=np.array([0.0, 0.0, 0.0]), radius=1.0),
-    subtract_func=partial(sdf_box, center=np.array([0.0, 0.0, 0.0]), dimensions=np.array([1.2, 0.6, 0.6]))
+    subtract_func=partial(sdf_box, center=np.array([0.0, 0.0, 0.0]), dims=np.array([1.2, 0.6, 0.6]))
 )
 
 # Visualize and save the compound shape
