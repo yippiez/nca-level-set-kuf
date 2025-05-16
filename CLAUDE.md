@@ -40,3 +40,6 @@ if a computationally heavy section is present cache it in the `cache` folder for
 ## Version Control Notes
 - Memorize to commit pyproject.toml together with uv.lock when commiting
 - Use git cli instead of git tool and do a single line commit that has no fluff
+
+## Command Tips
+- Can use `exa --tree` command to get an tree like view of the files
