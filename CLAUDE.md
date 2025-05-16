@@ -2,6 +2,7 @@
 
 ## Build & Run Commands
 - Run Notebook `uv run notebooks/<NotebookName>`
+- Use `uv run pytest -v` to test
 
 ## Code Style Guidelines
 - Notebooks are `.py` NOT '.ipynb' files that use interactive notebooks i.e. `# %%` to designate and sepearte cells.
