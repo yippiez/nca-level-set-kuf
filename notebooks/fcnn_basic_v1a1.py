@@ -22,13 +22,13 @@ import torch.optim as optim
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
-from util.paths import get_reports_dir
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # Import the FCNN model and SDF functions
 from models.fcnn import FCNN
+from util.paths import get_reports_dir
 from util.sdf import sdf_pill, sdf_box, sdf_torus, sdf_render
 from util.cache import cache_save, cache_exists, cache_get_torch, cache_get_pickle, cache_get_numpy
 

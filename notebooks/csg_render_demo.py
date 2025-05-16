@@ -6,12 +6,12 @@
 import sys
 import os
 from pathlib import Path
-from util.paths import get_reports_dir
 
 # Add parent directory to path to allow imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import numpy as np
+from util.paths import get_reports_dir
 from util.sdf import sdf_sphere, sdf_box, sdf_torus, sdf_pill, sdf_render_csg, sdf_render_csg_animation
 from util.types import CSGRenderConfig
 

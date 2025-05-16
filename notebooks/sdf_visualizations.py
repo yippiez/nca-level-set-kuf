@@ -11,11 +11,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from functools import partial
 import time
-from util.paths import get_reports_dir
 
 # Add the parent directory to the path so we can import the util module
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from util.paths import get_reports_dir
 from util.sdf import (
     sdf_sphere,
     sdf_pill,
