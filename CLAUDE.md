@@ -10,7 +10,10 @@
 - The notebooks should be designed in such a way to be runnable as normal python files. Meaning
 if a computationally heavy section is present cache it in the `cache` folder for future use.
 - Make sure to not repeat variable names in notebooks to ensure no variable collision occurs.
-- In notebooks the cache utility could be used to store inter variables in notebooks to not compute them again when running notebooks again
+- In notebooks the cache utility should ONLY be used for intermediate computations, NOT for final results:
+  - Use cache for heavy intermediate computations that can be reused across runs
+  - Always save final results (models, visualizations, etc.) to the reports directory
+  - Don't use cache for storing trained models - these should go in reports
 - Don't print as much in the functions defined outside notebooks
 
 ## Folder Structure
