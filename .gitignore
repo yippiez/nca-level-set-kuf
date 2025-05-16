@@ -17,10 +17,11 @@ env/
 .vscode/
 .idea/
 
-# GIF and other large output files
-*.gif
-reports/sdf/*.gif
-
 # Cache directories
 cache/*
 !cache/README.md
+
+# Reports directories
+reports/*
+!reports/README.md
+!reports/sdf/README.md
