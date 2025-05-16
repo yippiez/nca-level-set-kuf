@@ -61,10 +61,3 @@ class SDFLevelSetConfig(BaseModel):
     bounds: Tuple[float, float] = (-1.0, 1.0)
     figsize: Tuple[int, int] = (20, 16)
     save_path: Optional[str] = None
-
-
-# Type aliases for function signatures
-SDFFunction = Callable[[Union[np.ndarray, List[float]]], float]
-Point3D = Union[np.ndarray, List[float], Tuple[float, float, float]]
-Center3D = Union[np.ndarray, List[float], Tuple[float, float, float]]
-Dimensions3D = Union[np.ndarray, List[float], Tuple[float, float, float]]
