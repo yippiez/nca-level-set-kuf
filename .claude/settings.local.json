@@ -3,7 +3,9 @@
     "allow": [
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(uv run pytest tests/test_fcnn_n_perceptron.py -v)",
+      "Bash(uv run pytest:*)"
     ],
     "deny": []
   }

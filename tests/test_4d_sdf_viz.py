@@ -14,6 +14,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from models.fcnn import FCNN
 from util.cache import cache_get_torch, cache_get_json, cache_get_pickle
 from util.sdf import sdf_render_level_set
+from util.types import SDFLevelSetConfig
 
 
 @pytest.fixture
@@ -86,14 +87,15 @@ def test_model_predictions(cached_model, device):
 def test_sdf_render_level_set_default(cached_model):
     """Test the 4D SDF visualization with default parameters."""
     with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp_file:
-        fig = sdf_render_level_set(
-            cached_model,
+        config = SDFLevelSetConfig(
             shape_values=None,  # Use default 5x5 grid
             grid_size=30,  # Reduced for faster testing
             bounds=(-1.5, 1.5),
             figsize=(10, 8),
             save_path=tmp_file.name
         )
+        
+        fig = sdf_render_level_set(cached_model, config)
         
         # Check that file was created
         assert os.path.exists(tmp_file.name)
@@ -111,14 +113,15 @@ def test_sdf_render_level_set_specific_shapes(cached_model):
     specific_shapes = [0, 0.5, 1, 2, 3]
     
     with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp_file:
-        fig = sdf_render_level_set(
-            cached_model,
+        config = SDFLevelSetConfig(
             shape_values=specific_shapes,
             grid_size=30,
             bounds=(-1.5, 1.5),
             figsize=(12, 6),
             save_path=tmp_file.name
         )
+        
+        fig = sdf_render_level_set(cached_model, config)
         
         # Check that file was created
         assert os.path.exists(tmp_file.name)
@@ -136,14 +139,15 @@ def test_sdf_render_level_set_comparison(cached_model):
     comparison_shapes = [0, 0.5]
     
     with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp_file:
-        fig = sdf_render_level_set(
-            cached_model,
+        config = SDFLevelSetConfig(
             shape_values=comparison_shapes,
             grid_size=40,  # Higher resolution for comparison
             bounds=(-1.5, 1.5),
             figsize=(8, 4),
             save_path=tmp_file.name
         )
+        
+        fig = sdf_render_level_set(cached_model, config)
         
         # Check that file was created
         assert os.path.exists(tmp_file.name)

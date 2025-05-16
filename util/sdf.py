@@ -4,8 +4,11 @@ from matplotlib import animation
 from mpl_toolkits.mplot3d import Axes3D
 import functools
 from skimage.measure import marching_cubes
+from typing import Union, Optional, List, Tuple
+import torch.nn as nn
+from .types import SDFRenderConfig, SDFLevelSetConfig, Point3D, Center3D, Dimensions3D
 
-def sdf_sphere(point, center, radius):
+def sdf_sphere(point: Point3D, center: Center3D, radius: float) -> Union[float, np.ndarray]:
     """Calculate the signed distance from a point to a sphere."""
     point = np.asarray(point)
     center = np.asarray(center)
@@ -17,7 +20,7 @@ def sdf_sphere(point, center, radius):
     # Positive outside, zero on the surface, negative inside
     return dist_to_center - radius
 
-def sdf_pill(point, p1, p2, radius):
+def sdf_pill(point: Point3D, p1: Point3D, p2: Point3D, radius: float) -> Union[float, np.ndarray]:
     """Calculate the signed distance from a point to a pill shape."""
     point = np.asarray(point)
     p1 = np.asarray(p1)
@@ -57,7 +60,7 @@ def sdf_pill(point, p1, p2, radius):
         dist_to_axis = np.linalg.norm(point - closest_point)
         return dist_to_axis - radius
 
-def sdf_box(point, center, dimensions):
+def sdf_box(point: Point3D, center: Center3D, dimensions: Dimensions3D) -> Union[float, np.ndarray]:
     """Calculate the signed distance from a point to an axis-aligned box."""
     point = np.asarray(point)
     center = np.asarray(center)
@@ -82,7 +85,7 @@ def sdf_box(point, center, dimensions):
     # Combine inside and outside distances
     return outside_distance + inside_distance
 
-def sdf_torus(point, center, major_radius, minor_radius):
+def sdf_torus(point: Point3D, center: Center3D, major_radius: float, minor_radius: float) -> Union[float, np.ndarray]:
     """Calculate the signed distance from a point to a torus aligned with the xz-plane."""
     point = np.asarray(point)
     center = np.asarray(center)
@@ -98,12 +101,15 @@ def sdf_torus(point, center, major_radius, minor_radius):
     
     return dist
 
-def sdf_render(sdf_func, grid_size=50, bounds=(-1, 1), threshold=0.0, n_frames=36, save_path=None, figsize=(10, 10), dpi=100, fps=15):
+def sdf_render(sdf_func: callable, config: Optional[SDFRenderConfig] = None) -> animation.FuncAnimation:
     """Render a 3D signed distance function as a rotating animation."""
+    if config is None:
+        config = SDFRenderConfig()
+    
     # Create a 3D grid of points
-    x = np.linspace(bounds[0], bounds[1], grid_size)
-    y = np.linspace(bounds[0], bounds[1], grid_size)
-    z = np.linspace(bounds[0], bounds[1], grid_size)
+    x = np.linspace(config.bounds[0], config.bounds[1], config.grid_size)
+    y = np.linspace(config.bounds[0], config.bounds[1], config.grid_size)
+    z = np.linspace(config.bounds[0], config.bounds[1], config.grid_size)
     X, Y, Z = np.meshgrid(x, y, z, indexing='ij')
     
     # Reshape the grid for vectorized evaluation
@@ -113,25 +119,25 @@ def sdf_render(sdf_func, grid_size=50, bounds=(-1, 1), threshold=0.0, n_frames=3
     distances = sdf_func(points).reshape(X.shape)
     
     # Create the figure for the visualization
-    fig = plt.figure(figsize=figsize)
+    fig = plt.figure(figsize=config.figsize)
     ax = fig.add_subplot(111, projection='3d')
     
     # Calculate the spacing between grid points
     spacing = (
-        (bounds[1] - bounds[0]) / (grid_size - 1),
-        (bounds[1] - bounds[0]) / (grid_size - 1),
-        (bounds[1] - bounds[0]) / (grid_size - 1)
+        (config.bounds[1] - config.bounds[0]) / (config.grid_size - 1),
+        (config.bounds[1] - config.bounds[0]) / (config.grid_size - 1),
+        (config.bounds[1] - config.bounds[0]) / (config.grid_size - 1)
     )
     
     # Use scikit-image's marching cubes to create the isosurface
     verts, faces, normals, _ = marching_cubes(
         distances, 
-        level=threshold,
+        level=config.threshold,
         spacing=spacing
     )
     
     # Shift from grid coordinates to world coordinates
-    verts = verts + np.array([bounds[0], bounds[0], bounds[0]])
+    verts = verts + np.array([config.bounds[0], config.bounds[0], config.bounds[0]])
     
     # Create the initial mesh plot
     mesh = ax.plot_trisurf(verts[:, 0], verts[:, 1], triangles=faces, Z=verts[:, 2], 
@@ -139,9 +145,9 @@ def sdf_render(sdf_func, grid_size=50, bounds=(-1, 1), threshold=0.0, n_frames=3
     
     # Set nice equal aspect ratio and view angle
     ax.set_box_aspect([1, 1, 1])
-    ax.set_xlim(bounds)
-    ax.set_ylim(bounds)
-    ax.set_zlim(bounds)
+    ax.set_xlim(config.bounds)
+    ax.set_ylim(config.bounds)
+    ax.set_zlim(config.bounds)
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
@@ -152,7 +158,7 @@ def sdf_render(sdf_func, grid_size=50, bounds=(-1, 1), threshold=0.0, n_frames=3
         ax.clear()
         
         # Set view angle for this frame
-        ax.view_init(elev=30, azim=frame * (360 / n_frames))
+        ax.view_init(elev=30, azim=frame * (360 / config.n_frames))
         
         # Recreate the mesh with the new view angle
         mesh = ax.plot_trisurf(verts[:, 0], verts[:, 1], triangles=faces, Z=verts[:, 2], 
@@ -160,9 +166,9 @@ def sdf_render(sdf_func, grid_size=50, bounds=(-1, 1), threshold=0.0, n_frames=3
         
         # Reset the axis properties
         ax.set_box_aspect([1, 1, 1])
-        ax.set_xlim(bounds)
-        ax.set_ylim(bounds)
-        ax.set_zlim(bounds)
+        ax.set_xlim(config.bounds)
+        ax.set_ylim(config.bounds)
+        ax.set_zlim(config.bounds)
         ax.set_xlabel('X')
         ax.set_ylabel('Y')
         ax.set_zlabel('Z')
@@ -171,43 +177,44 @@ def sdf_render(sdf_func, grid_size=50, bounds=(-1, 1), threshold=0.0, n_frames=3
     
     # Create the animation
     anim = animation.FuncAnimation(
-        fig, update, frames=n_frames, fargs=(mesh, verts, faces, ax),
-        interval=1000/fps, blit=False
+        fig, update, frames=config.n_frames, fargs=(mesh, verts, faces, ax),
+        interval=1000/config.fps, blit=False
     )
     
     # Save the animation if a path is provided
-    if save_path:
-        anim.save(save_path, writer='pillow', fps=fps, dpi=dpi)
+    if config.save_path:
+        anim.save(config.save_path, writer='pillow', fps=config.fps, dpi=config.dpi)
     
     plt.close(fig)
     
     return anim
 
 
-def sdf_render_level_set(model, shape_values=None, grid_size=50, bounds=(-1, 1), figsize=(20, 16), save_path=None):
+def sdf_render_level_set(model: nn.Module, config: Optional[SDFLevelSetConfig] = None) -> plt.Figure:
     """Render 3D level sets of a 4D SDF function (x, y, z, shape) -> distance."""
     import torch
-    import matplotlib.pyplot as plt
-    from mpl_toolkits.mplot3d import Axes3D
-    from skimage.measure import marching_cubes
+    
+    if config is None:
+        config = SDFLevelSetConfig()
     
     # Default to a 5x5 grid of shape values
-    if shape_values is None:
+    if config.shape_values is None:
         rows, cols = 5, 5
         shape_values = np.linspace(0, 4, rows * cols)
     else:
+        shape_values = config.shape_values
         total_shapes = len(shape_values)
         rows = int(np.ceil(np.sqrt(total_shapes)))
         cols = int(np.ceil(total_shapes / rows))
     
     # Create figure with subplots
-    fig = plt.figure(figsize=figsize)
+    fig = plt.figure(figsize=config.figsize)
     fig.suptitle('3D Level Sets of 4D SDF: (x, y, z, shape) → distance', fontsize=16, fontweight='bold')
     
     # Create a 3D grid for spatial coordinates
-    x = np.linspace(bounds[0], bounds[1], grid_size)
-    y = np.linspace(bounds[0], bounds[1], grid_size)
-    z = np.linspace(bounds[0], bounds[1], grid_size)
+    x = np.linspace(config.bounds[0], config.bounds[1], config.grid_size)
+    y = np.linspace(config.bounds[0], config.bounds[1], config.grid_size)
+    z = np.linspace(config.bounds[0], config.bounds[1], config.grid_size)
     X, Y, Z = np.meshgrid(x, y, z, indexing='ij')
     
     # Reshape grid for model input
@@ -218,9 +225,9 @@ def sdf_render_level_set(model, shape_values=None, grid_size=50, bounds=(-1, 1),
     
     # Calculate spacing for marching cubes
     spacing = (
-        (bounds[1] - bounds[0]) / (grid_size - 1),
-        (bounds[1] - bounds[0]) / (grid_size - 1),
-        (bounds[1] - bounds[0]) / (grid_size - 1)
+        (config.bounds[1] - config.bounds[0]) / (config.grid_size - 1),
+        (config.bounds[1] - config.bounds[0]) / (config.grid_size - 1),
+        (config.bounds[1] - config.bounds[0]) / (config.grid_size - 1)
     )
     
     for idx, shape_value in enumerate(shape_values):
@@ -253,7 +260,7 @@ def sdf_render_level_set(model, shape_values=None, grid_size=50, bounds=(-1, 1),
             )
             
             # Shift from grid coordinates to world coordinates
-            verts = verts + np.array([bounds[0], bounds[0], bounds[0]])
+            verts = verts + np.array([config.bounds[0], config.bounds[0], config.bounds[0]])
             
             # Create the mesh plot
             ax.plot_trisurf(verts[:, 0], verts[:, 1], triangles=faces, Z=verts[:, 2], 
@@ -266,9 +273,9 @@ def sdf_render_level_set(model, shape_values=None, grid_size=50, bounds=(-1, 1),
                    transform=ax.transAxes)
         
         # Configure 3D axes
-        ax.set_xlim(bounds)
-        ax.set_ylim(bounds)
-        ax.set_zlim(bounds)
+        ax.set_xlim(config.bounds)
+        ax.set_ylim(config.bounds)
+        ax.set_zlim(config.bounds)
         ax.set_box_aspect([1, 1, 1])
         
         # Add title with shape value
@@ -309,7 +316,7 @@ def sdf_render_level_set(model, shape_values=None, grid_size=50, bounds=(-1, 1),
     plt.tight_layout()
     
     # Save if requested
-    if save_path:
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+    if config.save_path:
+        plt.savefig(config.save_path, dpi=300, bbox_inches='tight')
     
     return fig

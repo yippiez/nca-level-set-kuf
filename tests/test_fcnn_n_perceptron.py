@@ -64,20 +64,20 @@ def test_fcnn_layer_details(cached_model):
     assert len(layer_details) == 5, f"Expected 5 layers, got {len(layer_details)}"
     
     # Check first layer
-    assert layer_details[0]['in_features'] == 4
-    assert layer_details[0]['out_features'] == 64
-    assert layer_details[0]['n_neurons'] == 64
+    assert layer_details[0].in_features == 4
+    assert layer_details[0].out_features == 64
+    assert layer_details[0].n_neurons == 64
     
     # Check middle layers
     for i in range(1, 4):
-        assert layer_details[i]['in_features'] == 64
-        assert layer_details[i]['out_features'] == 64
-        assert layer_details[i]['n_neurons'] == 64
+        assert layer_details[i].in_features == 64
+        assert layer_details[i].out_features == 64
+        assert layer_details[i].n_neurons == 64
     
     # Check output layer
-    assert layer_details[4]['in_features'] == 64
-    assert layer_details[4]['out_features'] == 1
-    assert layer_details[4]['n_neurons'] == 1
+    assert layer_details[4].in_features == 64
+    assert layer_details[4].out_features == 1
+    assert layer_details[4].n_neurons == 1
 
 
 def test_model_summary(cached_model):
@@ -85,28 +85,28 @@ def test_model_summary(cached_model):
     summary = model_summary(cached_model)
     
     # Check total perceptrons
-    assert summary['total_perceptrons'] == 257
+    assert summary.total_perceptrons == 257
     
     # Check parameter counts
-    assert summary['total_parameters'] == 12865
-    assert summary['trainable_parameters'] == 12865
-    assert summary['non_trainable_parameters'] == 0
+    assert summary.total_parameters == 12865
+    assert summary.trainable_parameters == 12865
+    assert summary.non_trainable_parameters == 0
     
     # Check layers
-    assert len(summary['layers']) == 5
+    assert len(summary.layers) == 5
     
     # Verify layer info
-    for i, layer in enumerate(summary['layers']):
-        assert layer['type'] == 'Linear'
+    for i, layer in enumerate(summary.layers):
+        assert layer.type == 'Linear'
         if i == 0:
-            assert layer['input_size'] == 4
-            assert layer['output_size'] == 64
+            assert layer.input_size == 4
+            assert layer.output_size == 64
         elif i < 4:
-            assert layer['input_size'] == 64
-            assert layer['output_size'] == 64
+            assert layer.input_size == 64
+            assert layer.output_size == 64
         else:
-            assert layer['input_size'] == 64
-            assert layer['output_size'] == 1
+            assert layer.input_size == 64
+            assert layer.output_size == 1
 
 
 def test_manual_verification_matches(cached_model):
@@ -200,14 +200,14 @@ def test_layer_details_on_simple_network():
     assert len(layer_details) == 2
     
     # Check first layer: 2 inputs -> 3 outputs
-    assert layer_details[0]['in_features'] == 2
-    assert layer_details[0]['out_features'] == 3
-    assert layer_details[0]['n_neurons'] == 3
+    assert layer_details[0].in_features == 2
+    assert layer_details[0].out_features == 3
+    assert layer_details[0].n_neurons == 3
     
     # Check last layer: 3 inputs -> 1 output
-    assert layer_details[1]['in_features'] == 3
-    assert layer_details[1]['out_features'] == 1
-    assert layer_details[1]['n_neurons'] == 1
+    assert layer_details[1].in_features == 3
+    assert layer_details[1].out_features == 1
+    assert layer_details[1].n_neurons == 1
 
 
 if __name__ == "__main__":
