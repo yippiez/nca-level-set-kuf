@@ -25,8 +25,13 @@ if a computationally heavy section is present cache it in the `cache` folder for
 ## Implementation Notes
 - **Signed Distance Functions (SDFs)**: Implemented in `util/sdf/` module
   - Shape definitions in `util/sdf/definitions.py`: `sdf_sphere`, `sdf_box`, `sdf_pill`, `sdf_torus`
-  - CSG rendering in `util/sdf/render.py`: `sdf_render_csg` and `sdf_render_csg_animation`
-  - Visualization: `sdf_render` function using marching cubes algorithm from scikit-image
+  - CSG rendering in `util/sdf/render.py`: 
+    - `sdf_render_csg`: Render single CSG image
+    - `sdf_render_csg_animation`: Render rotating animation
+    - `sdf_render_level_set`: Render morphing animation based on shape parameter
+    - `sdf_render_level_set_grid`: Render grid of images with different shape values
+  - Level set functions expect 4D SDFs: (x, y, z, shape) => distance
+  - Visualization: Using marching cubes algorithm and OpenSCAD for canonical rendering
   - Operations: Union, Intersection, and Subtraction for combining shapes
 - SDF visualizations are found in `reports/<notebook_name>/` following the folder convention
 - **Path Utilities**: `util/paths.py` provides consistent directory management functions
@@ -35,6 +40,10 @@ if a computationally heavy section is present cache it in the `cache` folder for
   - `get_cache_dir()`: Returns the cache directory
 - **Notebooks**:
   - `notebooks/sdf_demos.py`: Combined demonstration of SDF visualization and CSG rendering
+  - `notebooks/sdf_demos_animation.py`: Demonstration of rotating CSG animations (full quality)
+  - `notebooks/sdf_demos_animation_quick.py`: Quick test version of animations
+  - `notebooks/level_set_demos.py`: Demonstration of level set morphing animations and grids
+  - `notebooks/level_set_demos_quick.py`: Quick test version of level set rendering
   - `notebooks/fcnn_basic_v1a1.py`: FCNN training experiment for learning SDFs
 - **Tests**:
   - `tests/test_cache.py`: Tests for the cache utility module (migrated from notebook demo)

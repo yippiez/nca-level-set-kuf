@@ -11,7 +11,9 @@ from .definitions import (
 # Import CSG rendering functions
 from .render import (
     sdf_render_csg,
-    sdf_render_csg_animation
+    sdf_render_csg_animation,
+    sdf_render_level_set,
+    sdf_render_level_set_grid
 )
 
 __all__ = [
@@ -22,5 +24,7 @@ __all__ = [
     'sdf_torus',
     # Rendering functions
     'sdf_render_csg',
-    'sdf_render_csg_animation'
+    'sdf_render_csg_animation',
+    'sdf_render_level_set',
+    'sdf_render_level_set_grid'
 ]

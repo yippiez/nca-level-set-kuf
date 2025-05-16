@@ -181,3 +181,166 @@ def sdf_render_csg_animation(sdf_func: Callable, config: Optional[CSGRenderConfi
     print(f"Animation saved to: {output_path}")
     
     return output_path
+
+
+def sdf_render_level_set(sdf_func: Callable, config: Optional[CSGRenderConfig] = None, shape_values: Optional[list] = None) -> str:
+    """Render a morphing animation iterating through shape parameter values."""
+    if config is None:
+        config = CSGRenderConfig()
+    
+    if shape_values is None:
+        shape_values = np.linspace(0, 1, config.n_frames)
+    
+    frames = []
+    original_save_path = config.save_path
+    
+    print(f"Generating {len(shape_values)} frames for level set animation...")
+    
+    for i, shape_val in enumerate(shape_values):
+        # Create SDF function with current shape value
+        def current_sdf(points):
+            # Add shape parameter as 4th dimension
+            points_4d = np.concatenate([points, np.full((points.shape[0], 1), shape_val)], axis=1)
+            return sdf_func(points_4d)
+        
+        # Create temporary frame
+        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp:
+            config.save_path = tmp.name
+            frame_path = sdf_render_csg(current_sdf, config)
+            
+            # Load image and add text annotation
+            img = Image.open(frame_path)
+            from PIL import ImageDraw, ImageFont
+            draw = ImageDraw.Draw(img)
+            
+            # Add shape parameter text in top right
+            text = f"shape={shape_val:.2f}"
+            try:
+                # Try to use a better font if available
+                font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 24)
+            except:
+                font = ImageFont.load_default()
+            
+            # Calculate text position (top right)
+            text_bbox = draw.textbbox((0, 0), text, font=font)
+            text_width = text_bbox[2] - text_bbox[0]
+            text_height = text_bbox[3] - text_bbox[1]
+            text_position = (img.width - text_width - 20, 20)
+            
+            # Draw text with background
+            draw.rectangle([text_position[0] - 5, text_position[1] - 5,
+                          text_position[0] + text_width + 5, text_position[1] + text_height + 5],
+                          fill='white', outline='black')
+            draw.text(text_position, text, fill='black', font=font)
+            
+            frames.append(img)
+            os.unlink(frame_path)
+        
+        print(f"Rendered frame {i+1}/{len(shape_values)} (shape={shape_val:.2f})")
+    
+    # Create GIF
+    if original_save_path is None:
+        output_path = tempfile.NamedTemporaryFile(suffix='.gif', delete=False).name
+    else:
+        output_path = original_save_path if original_save_path.endswith('.gif') else original_save_path.replace('.png', '.gif')
+    
+    print("Creating animated GIF...")
+    frames[0].save(
+        output_path,
+        save_all=True,
+        append_images=frames[1:],
+        duration=1000//config.fps,
+        loop=0
+    )
+    
+    config.save_path = original_save_path
+    print(f"Level set animation saved to: {output_path}")
+    
+    return output_path
+
+
+def sdf_render_level_set_grid(sdf_func: Callable, config: Optional[CSGRenderConfig] = None, shape_values: Optional[list] = None) -> str:
+    """Render a grid of images with different shape parameter values."""
+    if config is None:
+        config = CSGRenderConfig()
+    
+    if shape_values is None:
+        shape_values = [0.0, 0.25, 0.5, 0.75, 1.0]
+    
+    # Calculate grid dimensions
+    n_images = len(shape_values)
+    grid_cols = int(np.ceil(np.sqrt(n_images)))
+    grid_rows = int(np.ceil(n_images / grid_cols))
+    
+    # Create individual images
+    images = []
+    original_save_path = config.save_path
+    
+    print(f"Generating {n_images} images for level set grid...")
+    
+    for i, shape_val in enumerate(shape_values):
+        # Create SDF function with current shape value
+        def current_sdf(points):
+            # Add shape parameter as 4th dimension
+            points_4d = np.concatenate([points, np.full((points.shape[0], 1), shape_val)], axis=1)
+            return sdf_func(points_4d)
+        
+        # Create temporary frame
+        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp:
+            config.save_path = tmp.name
+            frame_path = sdf_render_csg(current_sdf, config)
+            
+            # Load image and add text annotation
+            img = Image.open(frame_path)
+            from PIL import ImageDraw, ImageFont
+            draw = ImageDraw.Draw(img)
+            
+            # Add shape parameter text
+            text = f"s={shape_val:.2f}"
+            try:
+                font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 36)
+            except:
+                font = ImageFont.load_default()
+            
+            # Calculate text position (centered at bottom)
+            text_bbox = draw.textbbox((0, 0), text, font=font)
+            text_width = text_bbox[2] - text_bbox[0]
+            text_height = text_bbox[3] - text_bbox[1]
+            text_position = ((img.width - text_width) // 2, img.height - text_height - 30)
+            
+            # Draw text with background
+            draw.rectangle([text_position[0] - 10, text_position[1] - 5,
+                          text_position[0] + text_width + 10, text_position[1] + text_height + 5],
+                          fill='white', outline='black')
+            draw.text(text_position, text, fill='black', font=font)
+            
+            images.append(img)
+            os.unlink(frame_path)
+        
+        print(f"Rendered image {i+1}/{n_images} (s={shape_val:.2f})")
+    
+    # Create grid image
+    grid_width = grid_cols * config.image_size[0]
+    grid_height = grid_rows * config.image_size[1]
+    grid_img = Image.new('RGB', (grid_width, grid_height), 'white')
+    
+    for i, img in enumerate(images):
+        row = i // grid_cols
+        col = i % grid_cols
+        x = col * config.image_size[0]
+        y = row * config.image_size[1]
+        grid_img.paste(img, (x, y))
+    
+    # Save grid image
+    if original_save_path is None:
+        output_path = tempfile.NamedTemporaryFile(suffix='.png', delete=False).name
+    else:
+        output_path = original_save_path
+    
+    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+    grid_img.save(output_path)
+    
+    config.save_path = original_save_path
+    print(f"Level set grid saved to: {output_path}")
+    
+    return output_path
