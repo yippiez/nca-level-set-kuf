@@ -29,6 +29,15 @@ if a computationally heavy section is present cache it in the `cache` folder for
   - Visualization: `sdf_render` function using marching cubes algorithm from scikit-image
   - Operations: Union, Intersection, and Subtraction for combining shapes
 - SDF visualizations are found in `reports/<notebook_name>/` following the folder convention
+- **Path Utilities**: `util/paths.py` provides consistent directory management functions
+  - `get_project_root()`: Returns the project root directory
+  - `get_reports_dir(notebook_name)`: Returns the reports directory for a specific notebook
+  - `get_cache_dir()`: Returns the cache directory
+- **Notebooks**:
+  - `notebooks/sdf_demos.py`: Combined demonstration of SDF visualization and CSG rendering
+  - `notebooks/fcnn_basic_v1a1.py`: FCNN training experiment for learning SDFs
+- **Tests**:
+  - `tests/test_cache.py`: Tests for the cache utility module (migrated from notebook demo)
 
 ## Allowed Commands 
 ```json
