@@ -29,7 +29,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 # Import the FCNN model and SDF functions
 from models.fcnn import FCNN
 from util.paths import get_reports_dir
-from util.sdf import sdf_pill, sdf_box, sdf_torus, sdf_render
+from util.sdf import sdf_pill, sdf_box, sdf_torus
 from util.cache import cache_save, cache_exists, cache_get_torch, cache_get_pickle, cache_get_numpy
 
 # %% 
@@ -393,6 +393,10 @@ def main():
     cache_save(model.state_dict(), model_cache_name)
     print(f"Model saved to cache as '{model_cache_name}'")
     
+    # Also save as PyTorch .pth file
+    torch.save(model.state_dict(), os.path.join(get_reports_dir('fcnn_basic_v1a1'), f'{model_cache_name}.pth'))
+    print(f"Model saved as PyTorch file: {os.path.join(get_reports_dir('fcnn_basic_v1a1'), f'{model_cache_name}.pth')}")
+    
     # Also save the model architecture parameters for loading later
     model_params = {
         'input_size': input_size,
@@ -402,6 +406,10 @@ def main():
     }
     cache_save(model_params, f'{model_cache_name}_params')
     print(f"Model parameters saved to cache as '{model_cache_name}_params'")
+    
+    # Save parameters as PyTorch format too
+    torch.save(model_params, os.path.join(get_reports_dir('fcnn_basic_v1a1'), f'{model_cache_name}_params.pth'))
+    print(f"Model parameters saved as PyTorch file: {os.path.join(get_reports_dir('fcnn_basic_v1a1'), f'{model_cache_name}_params.pth')}")
     
     return model
 
