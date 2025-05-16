@@ -72,6 +72,6 @@ class CSGRenderConfig(BaseModel):
     camera_rotation: Tuple[float, float, float] = (45, 20, 0)
     camera_distance: float = 10
     resolution: int = 100
-    colorscheme: Optional[str] = "Cornfield"
+    colorscheme: Optional[str] = "Metallic"  # Changed default to grey/metallic scheme
     n_frames: int = 36
     fps: int = 15

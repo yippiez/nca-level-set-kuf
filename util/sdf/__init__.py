@@ -5,7 +5,16 @@ from .definitions import (
     sdf_sphere,
     sdf_pill,
     sdf_box,
-    sdf_torus
+    sdf_torus,
+    sdf_cylinder,
+    sdf_cone,
+    sdf_octahedron,
+    sdf_pyramid,
+    sdf_hexagonal_prism,
+    sdf_ellipsoid,
+    sdf_rounded_box,
+    sdf_link,
+    sdf_star
 )
 
 # Import CSG rendering functions
@@ -22,6 +31,15 @@ __all__ = [
     'sdf_pill',
     'sdf_box',
     'sdf_torus',
+    'sdf_cylinder',
+    'sdf_cone',
+    'sdf_octahedron',
+    'sdf_pyramid',
+    'sdf_hexagonal_prism',
+    'sdf_ellipsoid',
+    'sdf_rounded_box',
+    'sdf_link',
+    'sdf_star',
     # Rendering functions
     'sdf_render_csg',
     'sdf_render_csg_animation',

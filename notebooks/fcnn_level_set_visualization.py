@@ -268,7 +268,7 @@ config_custom = CSGRenderConfig(
     camera_rotation=(30, 45, 0),  # Different camera angle
     n_frames=60,  # Many frames for slower transition
     fps=10,  # 6 seconds total animation
-    colorscheme="BeforeDawn"  # Different color scheme
+    colorscheme="Metallic"  # Grey/metallic color scheme (now default)
 )
 
 # Animate from 0 to 6, with error handling for marching cubes failures
