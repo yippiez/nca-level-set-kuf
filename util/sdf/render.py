@@ -85,10 +85,12 @@ def sdf_render_csg(sdf_func: Callable, config: Optional[CSGRenderConfig] = None)
         # Render with OpenSCAD
         cmd = [
             'openscad',
+            '--render',
             '--viewall',
             '--autocenter',
             f'--imgsize={config.image_size[0]},{config.image_size[1]}',
             f'--camera=0,0,0,{config.camera_rotation[0]},{config.camera_rotation[1]},{config.camera_rotation[2]},{config.camera_distance}',
+            '--projection=ortho',
             '-o', output_path,
             scad_path
         ]
