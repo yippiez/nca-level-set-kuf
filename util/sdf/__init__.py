@@ -5,9 +5,7 @@ from .definitions import (
     sdf_sphere,
     sdf_pill,
     sdf_box,
-    sdf_torus,
-    sdf_render,
-    sdf_render_level_set
+    sdf_torus
 )
 
 # Import CSG rendering functions
@@ -23,8 +21,6 @@ __all__ = [
     'sdf_box',
     'sdf_torus',
     # Rendering functions
-    'sdf_render',
-    'sdf_render_level_set',
     'sdf_render_csg',
     'sdf_render_csg_animation'
 ]
