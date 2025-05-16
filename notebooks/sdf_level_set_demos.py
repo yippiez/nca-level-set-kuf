@@ -68,13 +68,13 @@ config_grid = CSGRenderConfig(
     grid_size=60,
     bounds=(-1.5, 1.5),
     save_path=str(OUTPUT_DIR / "morphing_grid.png"),
-    image_size=(400, 400),  # Original size
+    image_size=(300, 300),  # Smaller images for 5x5 grid
     camera_rotation=(45, 20, 0),
     colorscheme="Cornfield"
 )
 
-# Create grid with 5 shape values
-shape_values_grid = [0.0, 1.0, 2.0, 3.0, 4.0]
+# Create grid with 25 shape values for 5x5 grid
+shape_values_grid = np.linspace(0, 4, 25).tolist()
 grid_path = sdf_render_level_set_grid(morphing_sdf, config_grid, shape_values_grid)
 print(f"Saved morphing grid to: {grid_path}")
 
