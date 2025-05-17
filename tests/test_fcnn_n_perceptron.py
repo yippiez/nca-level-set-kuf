@@ -8,7 +8,7 @@ import os
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from models.fcnn import FCNN
+from tree.fcnn import FCNN
 from util.eval import fcnn_n_perceptrons, fcnn_layer_details, model_summary
 
 

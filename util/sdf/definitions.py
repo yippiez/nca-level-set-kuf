@@ -1,12 +1,5 @@
 import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib import animation
-from mpl_toolkits.mplot3d import Axes3D
-import functools
-from skimage.measure import marching_cubes
-from typing import Union, Optional, List, Tuple
-import torch.nn as nn
-from ..types import SDFRenderConfig, SDFLevelSetConfig
+from typing import Union
 
 def sdf_sphere(point: np.ndarray, center: np.ndarray, radius: float) -> Union[float, np.ndarray]:
     """Calculate the signed distance from a point to a sphere."""
@@ -38,7 +31,7 @@ def sdf_pill(point: np.ndarray, p1: np.ndarray, p2: np.ndarray, radius: float) -
         proj = np.clip(proj, 0, axis_len)
         closest = p1 + proj * axis_norm
         dist = np.linalg.norm(point - closest)
-        return dist - radius
+        return dist - radius # type: ignore
 
 def sdf_box(point: np.ndarray, center: np.ndarray, dims: np.ndarray) -> Union[float, np.ndarray]:
     """Calculate the signed distance from a point to an axis-aligned box."""
@@ -102,10 +95,10 @@ def sdf_cone(point: np.ndarray, tip: np.ndarray, base_center: np.ndarray, radius
     if point.ndim == 1:
         if proj_len < 0:
             # Below tip
-            return np.linalg.norm(v)
+            return np.linalg.norm(v) # type: ignore
         elif proj_len > height:
             # Above base
-            return np.linalg.norm(point - base_center)
+            return np.linalg.norm(point - base_center) # type: ignore
         else:
             # Along cone surface
             proj_point = tip + proj_len * axis_norm
@@ -204,8 +197,6 @@ def sdf_link(point: np.ndarray, center: np.ndarray, r_major: float, r_minor: flo
     """Calculate the signed distance from a point to a chain link shape."""
     point = np.asarray(point)
     center = np.asarray(center)
-    
-    local = point - center
     
     # Two tori connected by cylinders
     torus1_center = center + np.array([length/2, 0, 0])

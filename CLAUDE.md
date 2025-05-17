@@ -47,3 +47,12 @@
 
 ## Command Tips
 - Can use `exa --tree` command to get an tree like view of the files
+
+## Experiment Tree Versioning
+- When adding a new experiment in the experiment-tree folder, the version name of the class should be its <parent version name> + <n_children> + 1 to distinguish 11 from 1 - 1
+- We will separate the numbers with letters like:
+  - Root example will be v1
+  - Children will be v1a and v1b
+  - Grandchildren of v1a will be v1a1, v1a2 and so on.
+  - Grandchildren of v1a3 will be v1a3a, v1a3b and so on.
+  - And so on, to create a clear hierarchical versioning system

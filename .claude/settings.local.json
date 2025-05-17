@@ -10,7 +10,10 @@
       "Bash(uv run:*)",
       "Bash(mkdir:*)",
       "Bash(mv:*)",
-      "Bash(uv lock:*)"
+      "Bash(uv lock:*)",
+      "Bash(find:*)",
+      "Bash(rg:*)",
+      "Bash(grep:*)"
     ],
     "deny": []
   }

@@ -25,6 +25,9 @@ from .render import (
     sdf_render_level_set_grid
 )
 
+# Import similarity functions
+from .similarity import sdf_get_sampled_boolean_similarity
+
 __all__ = [
     # Shape functions
     'sdf_sphere',
@@ -44,5 +47,7 @@ __all__ = [
     'sdf_render_csg',
     'sdf_render_csg_animation',
     'sdf_render_level_set',
-    'sdf_render_level_set_grid'
+    'sdf_render_level_set_grid',
+    # Similarity functions
+    'sdf_get_sampled_boolean_similarity'
 ]

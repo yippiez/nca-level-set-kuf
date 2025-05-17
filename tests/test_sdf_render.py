@@ -1,30 +1,53 @@
 """
-Test SDF rendering functionality.
+Unified test file for all SDF-related rendering and visualization functionality.
 
-This test file verifies the correct functionality of SDF rendering methods.
-It consolidates tests from various visualization notebooks into a single test suite.
+This file combines tests from:
+- test_render.py
+- test_level_set_render.py
+- test_4d_sdf_viz.py
 """
 
 import os
+import sys
 import numpy as np
 import pytest
-from pathlib import Path
-import tempfile
 import torch
-import torch.nn as nn
+import tempfile
+from pathlib import Path
 
+# Add parent directory to path for imports
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from tree.fcnn import FCNN
 from util.types import CSGRenderConfig
 from util.sdf import (
     sdf_sphere, sdf_box, sdf_pill, sdf_torus, sdf_cylinder,
     sdf_cone, sdf_octahedron, sdf_pyramid, sdf_hexagonal_prism,
-    sdf_ellipsoid, sdf_rounded_box, sdf_link, sdf_star
-)
-from util.sdf.render import (
+    sdf_ellipsoid, sdf_rounded_box, sdf_link, sdf_star,
     sdf_render_csg, sdf_render_csg_animation, 
     sdf_render_level_set, sdf_render_level_set_grid
 )
-from models.fcnn import FCNN
 
+
+# ==========================================
+# Common fixtures used by multiple test classes
+# ==========================================
+
+@pytest.fixture
+def device():
+    """Get the compute device."""
+    return torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+@pytest.fixture
+def temp_dir():
+    """Create a temporary directory for test files."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        yield tmpdir
+
+
+# ==========================================
+# Basic SDF shape tests
+# ==========================================
 
 class TestSDFBasicShapes:
     """Test basic SDF shape functions."""
@@ -82,14 +105,12 @@ class TestSDFBasicShapes:
         assert distances[1] > 0  # exterior
 
 
+# ==========================================
+# Basic CSG Rendering tests
+# ==========================================
+
 class TestSDFRendering:
     """Test SDF rendering functions."""
-    
-    @pytest.fixture
-    def temp_dir(self):
-        """Create a temporary directory for test files."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            yield tmpdir
     
     def test_sdf_render_csg(self, temp_dir):
         """Test basic CSG rendering."""
@@ -165,14 +186,26 @@ class TestSDFRendering:
         assert os.path.getsize(config.save_path) > 0
 
 
+# ==========================================
+# Level Set Rendering tests
+# ==========================================
+
 class TestLevelSetRendering:
     """Test level set rendering functions."""
     
-    @pytest.fixture
-    def temp_dir(self):
-        """Create a temporary directory for test files."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            yield tmpdir
+    def simple_4d_sdf(self, points):
+        """Simple 4D SDF for testing."""
+        x, y, z = points[:, 0], points[:, 1], points[:, 2]
+        shape = points[:, 3]
+        
+        # Sphere distance
+        sphere_dist = np.sqrt(x**2 + y**2 + z**2) - 0.5
+        
+        # Box distance
+        box_dist = np.maximum(np.maximum(np.abs(x) - 0.5, np.abs(y) - 0.5), np.abs(z) - 0.5)
+        
+        # Morph between them
+        return (1 - shape) * sphere_dist + shape * box_dist
     
     def test_level_set_function(self):
         """Test 4D level set SDF function."""
@@ -218,6 +251,64 @@ class TestLevelSetRendering:
         assert result.shape == (2,)
         # Sphere and box should give different distances for the same point
         assert result[0] != result[1]
+    
+    def test_level_set_animation(self, temp_dir):
+        """Test level set animation creation."""
+        config = CSGRenderConfig(
+            grid_size=30,  # Low resolution for fast test
+            bounds=(-1.0, 1.0),
+            save_path=os.path.join(temp_dir, "level_set_anim.gif"),
+            image_size=(200, 200),
+            n_frames=5,
+            fps=5
+        )
+        
+        # Test with default shape values
+        result_path = sdf_render_level_set(self.simple_4d_sdf, config)
+        assert Path(result_path).exists()
+        assert result_path.endswith('.gif')
+        
+        # Test with custom shape values
+        shape_values = [0.0, 0.5, 1.0]
+        result_path2 = sdf_render_level_set(self.simple_4d_sdf, config, shape_values)
+        assert Path(result_path2).exists()
+    
+    def test_level_set_grid(self, temp_dir):
+        """Test level set grid creation."""
+        config = CSGRenderConfig(
+            grid_size=30,
+            bounds=(-1.0, 1.0),
+            save_path=os.path.join(temp_dir, "level_set_grid.png"),
+            image_size=(150, 150)
+        )
+        
+        # Test with default shape values
+        result_path = sdf_render_level_set_grid(self.simple_4d_sdf, config)
+        assert Path(result_path).exists()
+        assert result_path.endswith('.png')
+        
+        # Test with custom shape values
+        shape_values = [0.0, 0.33, 0.67, 1.0]
+        result_path2 = sdf_render_level_set_grid(self.simple_4d_sdf, config, shape_values)
+        assert Path(result_path2).exists()
+    
+    def test_level_set_with_invalid_sdf(self, temp_dir):
+        """Test error handling with invalid SDF function."""
+        def invalid_sdf(points):
+            # Wrong shape - doesn't expect 4D input
+            return np.zeros(points.shape[0])
+        
+        config = CSGRenderConfig(
+            grid_size=20,
+            bounds=(-1.0, 1.0),
+            save_path=os.path.join(temp_dir, "invalid.gif"),
+            image_size=(100, 100),
+            n_frames=3
+        )
+        
+        # Should raise an error
+        with pytest.raises(Exception):
+            sdf_render_level_set(invalid_sdf, config)
     
     def test_sdf_render_level_set(self, temp_dir):
         """Test level set rendering."""
@@ -296,14 +387,35 @@ class TestLevelSetRendering:
         assert os.path.getsize(config.save_path) > 0
 
 
+# ==========================================
+# Neural Network SDF tests
+# ==========================================
+
+@pytest.fixture
+def test_model(device):
+    """Create a test 4D SDF model for testing."""
+    # Create a small test model
+    input_size = 4   # x, y, z, shape
+    hidden_size = 32  # Smaller for testing
+    output_size = 1   # SDF value
+    num_layers = 3    # Smaller for testing
+    
+    # Set seed for reproducibility
+    torch.manual_seed(42)
+    
+    model = FCNN(
+        input_size=input_size,
+        hidden_size=hidden_size,
+        output_size=output_size,
+        num_layers=num_layers
+    ).to(device)
+    
+    model.eval()
+    return model
+
+
 class TestNeuralNetworkSDF:
     """Test neural network based SDF rendering."""
-
-    @pytest.fixture
-    def temp_dir(self):
-        """Create a temporary directory for test files."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            yield tmpdir
     
     @pytest.fixture
     def simple_fcnn_model(self):
@@ -318,6 +430,56 @@ class TestNeuralNetworkSDF:
         model = FCNN(input_size, hidden_size, output_size, num_layers)
         
         return model
+
+    def test_model_predictions(self, test_model, device):
+        """Test model predictions for specific points and shape values."""
+        test_points = np.array([
+            [0, 0, 0],      # Center
+            [0.5, 0, 0],    # Right
+            [0, 0.5, 0],    # Up
+            [0, 0, 0.5],    # Forward
+            [0.3, 0.3, 0],  # Diagonal in XY plane
+        ])
+        
+        shape_values = [0, 0.5, 1, 2, 3]
+        results = {}
+        
+        with torch.no_grad():
+            for shape in shape_values:
+                # Prepare inputs
+                shape_indices = np.ones((len(test_points), 1)) * shape
+                inputs = np.hstack([test_points, shape_indices])
+                inputs_tensor = torch.FloatTensor(inputs).to(device)
+                
+                # Get predictions
+                predictions = test_model(inputs_tensor).cpu().numpy()
+                results[shape] = predictions
+        
+        # Basic sanity checks
+        assert len(results) == len(shape_values)
+        for shape in shape_values:
+            assert results[shape].shape == (5, 1)
+    
+    def test_model_interpolation(self, test_model, device):
+        """Test that model can interpolate between shapes."""
+        # Test point at origin
+        test_point = np.array([[0, 0, 0]])
+        
+        # Test interpolation from shape 0 to shape 1
+        interpolation_values = np.linspace(0, 1, 5)  # Reduced count for speed
+        distances = []
+        
+        with torch.no_grad():
+            for s in interpolation_values:
+                shape_indices = np.ones((1, 1)) * s
+                inputs = np.hstack([test_point, shape_indices])
+                inputs_tensor = torch.FloatTensor(inputs).to(device)
+                
+                prediction = test_model(inputs_tensor).cpu().numpy()[0, 0]
+                distances.append(prediction)
+        
+        # Check that we got results for all interpolation values
+        assert len(distances) == len(interpolation_values)
     
     def test_fcnn_sdf_function(self, simple_fcnn_model):
         """Test FCNN-based SDF function."""
@@ -445,7 +607,10 @@ class TestNeuralNetworkSDF:
             return max(-1.5, min(1.5, values))
         
         # Render and verify output file exists
-        # Render and verify output file exists
         sdf_render_level_set(safe_fcnn_sdf, config, shape_values=shape_values)
         assert os.path.exists(config.save_path)
         assert os.path.getsize(config.save_path) > 0
+
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])
