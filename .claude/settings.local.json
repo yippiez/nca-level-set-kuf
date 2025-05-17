@@ -14,7 +14,10 @@
       "Bash(find:*)",
       "Bash(rg:*)",
       "Bash(grep:*)",
-      "Bash(cp:*)"
+      "Bash(cp:*)",
+      "Bash(ls:*)",
+      "Bash(python3:*)",
+      "Bash(cat:*)"
     ],
     "deny": []
   }
