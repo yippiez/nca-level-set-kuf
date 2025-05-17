@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 import time
 import json
-from typing import Any, Callable, Union, ClassVar, Tuple
+from typing import Any, Callable, Union, ClassVar, List, Tuple
 
 import numpy as np
 import torch
@@ -14,7 +14,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
 from pydantic import BaseModel, Field
 
-from stok.tree.point_based import PointBasedExperiment, PointSampleStrategy, PointBasedExperimentResult
+from stok.tree.point_based import PointBasedExperiment, PointSampleStrategy, PointBasedExperimentResult, RandomSample4DStrategy
 from stok.util.sdf.similarity import sdf_get_sampled_boolean_similarity
 from stok.util.types import LayerDetails, CSGRenderConfig
 from stok.util.sdf.render import (
@@ -134,17 +134,18 @@ class FCNNExperiment(PointBasedExperiment):
     
     def __init__(self, 
                  sample_strategy: PointSampleStrategy,
-                 sdf: Callable[[np.ndarray], np.ndarray],
-                 bound_begin: Union[np.ndarray, tuple[float, float, float]],
-                 bound_end: Union[np.ndarray, tuple[float, float, float]],
-                 model_params: Union[FCNNModelParams, dict[str, Any]],
-                 train_params: Union[FCNNTrainParams, dict[str, Any]],
-                 model_name: str) -> None:
+                 sdfs: List[Callable[[np.ndarray], np.ndarray]],
+                 bound_begin: Union[np.ndarray, tuple],
+                 bound_end: Union[np.ndarray, tuple],
+                 model_params: FCNNModelParams,
+                 train_params: FCNNTrainParams,
+                 model_name: str,
+                 sdf_shape_values: List[float] = None) -> None:
         """Initialize the FCNN experiment.
         
         Args:
             sample_strategy: Strategy for sampling points
-            sdf: SDF function to evaluate
+            sdfs: List of SDF functions to evaluate at different shape values
             bound_begin: Lower bounds for sampling points
             bound_end: Upper bounds for sampling points
             model_params: Parameters for the FCNN model
@@ -152,14 +153,16 @@ class FCNNExperiment(PointBasedExperiment):
             train_params: Training parameters
                         (batch_size, learning_rate, num_epochs)
             model_name: Name of the model (used for naming model files in reports)
+            sdf_shape_values: Shape values corresponding to each SDF function
         """
-        super().__init__(sample_strategy, sdf, bound_begin, bound_end)
-        self.model_params = model_params
-        self.train_params = train_params
+        super().__init__(sample_strategy, sdfs, bound_begin, bound_end, sdf_shape_values)
+        self.model_params = model_params 
+        self.train_params = train_params 
         self.model_name = model_name
         self.model = None
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.history = None
+        self.metrics = None
 
     @property
     def dump_path(self) -> Path:
@@ -175,7 +178,7 @@ class FCNNExperiment(PointBasedExperiment):
         """Run the FCNN experiment.
         
         This method performs the following steps:
-        1. Sample points from SDF
+        1. Sample points from SDFs
         2. Prepare data for training
         3. Create and train the FCNN model to overfit
         4. Evaluate the model using boolean similarity
@@ -268,19 +271,49 @@ class FCNNExperiment(PointBasedExperiment):
         # Create a prediction function from our trained model
         def model_sdf(points: np.ndarray) -> np.ndarray:
             """Convert model into an SDF function compatible with sdf_get_sampled_boolean_similarity."""
+            # We'll evaluate at the middle shape value (or the first if only one is available)
+            eval_shape_value = 0.5
+            if self.sdf_shape_values is not None and len(self.sdf_shape_values) > 0:
+                # If we have shape values, pick the middle one for evaluation
+                if len(self.sdf_shape_values) > 1:
+                    eval_shape_value = self.sdf_shape_values[len(self.sdf_shape_values) // 2]
+                else:
+                    eval_shape_value = self.sdf_shape_values[0]
+            
+            # Add shape parameter to points
+            shape_param = np.full((points.shape[0], 1), eval_shape_value)
+            points_4d = np.concatenate([points, shape_param], axis=1)
+            
             with torch.no_grad():
-                points_tensor = torch.FloatTensor(points).to(self.device)
+                points_tensor = torch.FloatTensor(points_4d).to(self.device)
                 predictions = self.model(points_tensor).cpu().numpy()
+            
             return predictions.flatten()
         
-        # Use the original SDF function
+        # Use the original SDF function corresponding to the evaluation shape value
         def original_sdf(points: np.ndarray) -> np.ndarray:
             """Wrapper for the original SDF function."""
-            return self.sdf(points).flatten()
+            # Find the right SDF based on the evaluation shape
+            eval_shape_value = 0.5
+            if self.sdf_shape_values is not None and len(self.sdf_shape_values) > 0:
+                if len(self.sdf_shape_values) > 1:
+                    eval_shape_value = self.sdf_shape_values[len(self.sdf_shape_values) // 2]
+                else:
+                    eval_shape_value = self.sdf_shape_values[0]
+            
+            # Find the closest shape value in our list
+            sdf_idx = 0
+            if len(self.sdf_shape_values) > 1:
+                # Find index of closest shape value
+                sdf_idx = np.argmin(np.abs(np.array(self.sdf_shape_values) - eval_shape_value))
+            
+            # Use the corresponding SDF
+            original_sdf_func = self.sdfs[sdf_idx]
+            return original_sdf_func(points).flatten()
         
         # Calculate boolean similarity
-        bound_begin = tuple(self.bound_begin) if isinstance(self.bound_begin, np.ndarray) else self.bound_begin
-        bound_end = tuple(self.bound_end) if isinstance(self.bound_end, np.ndarray) else self.bound_end
+        bound_begin = tuple(self.bound_begin[:3]) if isinstance(self.bound_begin, np.ndarray) else self.bound_begin[:3]
+        bound_end = tuple(self.bound_end[:3]) if isinstance(self.bound_end, np.ndarray) else self.bound_end[:3]
         step_size = 0.1  # Adjust this based on desired precision vs. computation time
         
         boolean_similarity = sdf_get_sampled_boolean_similarity(
@@ -348,18 +381,16 @@ class FCNNExperiment(PointBasedExperiment):
                 predictions = self.model(points_tensor).cpu().numpy()
             return predictions.flatten()
         
-        # Define target SDF functions for different shape values (0 = sphere, 1 = cube)
-        def target_sdf_sphere(points):
-            # Add shape param = 0 (sphere) to spatial points
-            shape_param = np.zeros((points.shape[0], 1))
-            points_4d = np.concatenate([points, shape_param], axis=1)
-            return self.sdf(points_4d)
+        # Create target SDF functions for each shape value
+        target_sdfs = []
+        for i, sdf in enumerate(self.sdfs):
+            # Create a wrapper function to convert 3D points to the right format for this SDF
+            def make_target_sdf(idx):
+                def target_sdf_wrapper(points):
+                    return self.sdfs[idx](points)
+                return target_sdf_wrapper
             
-        def target_sdf_cube(points):
-            # Add shape param = 1 (cube) to spatial points
-            shape_param = np.ones((points.shape[0], 1))
-            points_4d = np.concatenate([points, shape_param], axis=1)
-            return self.sdf(points_4d)
+            target_sdfs.append(make_target_sdf(i))
         
         # Create config
         config = CSGRenderConfig(
@@ -369,15 +400,11 @@ class FCNNExperiment(PointBasedExperiment):
             save_path=str(save_path)
         )
         
-        # Use both shape values for comparison (sphere and cube)
-        shape_values = [0.0, 1.0]  # 0 = sphere, 1 = cube
-        target_sdfs = [target_sdf_sphere, target_sdf_cube]
-        
         # Create comparison with metrics
         return sdf_render_level_set_side_to_side(
             learned_sdf,
             target_sdfs,
-            shape_values,
+            self.sdf_shape_values,
             config,
             [("Boolean Similarity", [self.metrics.boolean_similarity])]
         )
@@ -497,3 +524,93 @@ class FCNNExperiment(PointBasedExperiment):
             predictions = self.model(points_tensor).cpu().numpy()
         
         return predictions
+
+# Removed as these classes are now handled by point_based.py
+
+
+def experiment_1():
+    """Run an experiment to learn a 4D SDF that blends between a sphere and a cube."""
+    from stok.util.sdf.definitions import sdf_sphere, sdf_box
+    import numpy as np
+    
+    # Define sphere and cube SDFs
+    center = np.array([0, 0, 0])
+    sphere_radius = 0.8
+    box_dims = np.array([1.5, 1.5, 1.5])
+    
+    # Create partial functions for sphere and cube
+    def sphere_sdf(points):
+        return sdf_sphere(points, center, sphere_radius)
+    
+    def cube_sdf(points):
+        return sdf_box(points, center, box_dims)
+    
+    # Define the shape values for sphere (0.0) and cube (1.0)
+    sdfs = [sphere_sdf, cube_sdf]
+    sdf_shape_values = [0.0, 1.0]
+    
+    # Set parameters (smaller for faster execution)
+    bound_begin = np.array([-2.0, -2.0, -2.0, 0.0])  # min x, y, z, shape
+    bound_end = np.array([2.0, 2.0, 2.0, 1.0])       # max x, y, z, shape
+    n_points = 5000  # Reduced number of points
+    
+    # Create 4D sample strategy
+    sample_strategy = RandomSample4DStrategy(
+        n=n_points,
+        bound_begin=bound_begin,
+        bound_end=bound_end,
+        shape_values=sdf_shape_values
+    )
+    
+    # Create model parameters
+    model_params = FCNNModelParams(
+        input_size=4,           # 4D input (x, y, z, shape)
+        hidden_size=64,
+        output_size=1,
+        num_layers=5
+    )
+    
+    # Create training parameters (very short for testing)
+    train_params = FCNNTrainParams(
+        batch_size=128,
+        learning_rate=0.001,
+        num_epochs=50  # Very few epochs for quick testing
+    )
+    
+    # Create experiment
+    experiment = FCNNExperiment(
+        sample_strategy=sample_strategy,
+        sdfs=sdfs,
+        bound_begin=bound_begin,
+        bound_end=bound_end,
+        model_params=model_params,
+        train_params=train_params,
+        model_name="sphube_v1",
+        sdf_shape_values=sdf_shape_values
+    )
+    
+    # Run experiment
+    print("Starting Sphube experiment...")
+    result = experiment.do()
+    print(f"Experiment completed! Boolean similarity: {result.metrics.boolean_similarity:.4f}")
+    
+    # Create visualizations (with lower resolution for faster rendering)
+    print("\nGenerating visualizations...")
+    side_by_side_path = experiment.show_as_side_by_side(resolution=20)
+    print(f"Side-by-side comparison saved to: {side_by_side_path}")
+    
+    # Create animations for different shape values
+    sphere_anim_path = experiment.show_as_animation(resolution=20, n_frames=10, shape_value=0.0)
+    print(f"Sphere animation saved to: {sphere_anim_path}")
+    
+    cube_anim_path = experiment.show_as_animation(resolution=20, n_frames=10, shape_value=1.0)
+    print(f"Cube animation saved to: {cube_anim_path}")
+    
+    # Create grid showing shape transition
+    grid_path = experiment.show_as_grid(resolution=20, shape_values=np.linspace(0, 1, 4))
+    print(f"Shape grid saved to: {grid_path}")
+    
+    return result
+
+if __name__ == "__main__":
+    experiment_1()
