@@ -8,9 +8,9 @@ import sys
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from tree.experiment import ExperimentBase
-from tree.point_based import PointBasedExperiment, PointSampleStrategy, RandomSampleStrategy
-from util.sdf import sdf_sphere
+from stok.tree.experiment import ExperimentBase
+from stok.tree.point_based import PointBasedExperiment, PointSampleStrategy, RandomSampleStrategy
+from stok.util.sdf import sdf_sphere
 
 
 class MockSampleStrategy(PointSampleStrategy):

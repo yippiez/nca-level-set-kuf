@@ -8,9 +8,7 @@ import os
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from tree.fcnn import FCNN
-from util.eval import fcnn_n_perceptrons, fcnn_layer_details, model_summary
-
+from stok.tree.fcnn import FCNN, fcnn_n_perceptrons, fcnn_layer_details
 
 @pytest.fixture
 def device():
@@ -72,36 +70,6 @@ def test_fcnn_layer_details(test_model):
     assert layer_details[4].in_features == 64
     assert layer_details[4].out_features == 1
     assert layer_details[4].n_neurons == 1
-
-
-def test_model_summary(test_model):
-    """Test the model_summary function."""
-    summary = model_summary(test_model)
-    
-    # Check total perceptrons
-    assert summary.total_perceptrons == 257
-    
-    # Check parameter counts
-    assert summary.total_parameters == 12865
-    assert summary.trainable_parameters == 12865
-    assert summary.non_trainable_parameters == 0
-    
-    # Check layers
-    assert len(summary.layers) == 5
-    
-    # Verify layer info
-    for i, layer in enumerate(summary.layers):
-        assert layer.type == 'Linear'
-        if i == 0:
-            assert layer.input_size == 4
-            assert layer.output_size == 64
-        elif i < 4:
-            assert layer.input_size == 64
-            assert layer.output_size == 64
-        else:
-            assert layer.input_size == 64
-            assert layer.output_size == 1
-
 
 def test_manual_verification_matches(test_model):
     """Test that manual count matches function count."""

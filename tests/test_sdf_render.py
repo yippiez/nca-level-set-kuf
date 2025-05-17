@@ -18,9 +18,9 @@ from pathlib import Path
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from tree.fcnn import FCNN
-from util.types import CSGRenderConfig
-from util.sdf import (
+from stok.tree.fcnn import FCNN
+from stok.util.types import CSGRenderConfig
+from stok.util.sdf import (
     sdf_sphere, sdf_box, sdf_pill, sdf_torus, sdf_cylinder,
     sdf_cone, sdf_octahedron, sdf_pyramid, sdf_hexagonal_prism,
     sdf_ellipsoid, sdf_rounded_box, sdf_link, sdf_star,

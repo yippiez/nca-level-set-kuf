@@ -8,7 +8,7 @@ import sys
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from util.sdf import (
+from stok.util.sdf import (
     sdf_sphere,
     sdf_box,
     sdf_get_sampled_boolean_similarity

@@ -8,9 +8,9 @@ import sys
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from util.sdf.definitions import sdf_sphere
-from util.sdf.operations import sdf_union
-from util.sdf.similarity import sdf_get_sampled_boolean_similarity
+from stok.util.sdf.definitions import sdf_sphere
+from stok.util.sdf.operations import sdf_union
+from stok.util.sdf.similarity import sdf_get_sampled_boolean_similarity
 
 def test_sdf_union_identical_spheres():
     """Test that union of two identical spheres is the same as the original sphere."""
