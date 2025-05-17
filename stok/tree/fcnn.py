@@ -36,23 +36,6 @@ def fcnn_n_perceptrons(model: nn.Module) -> int:
     return total_perceptrons
 
 
-def fcnn_layer_details(model: nn.Module) -> list[LayerDetails]:
-    """Get detailed information about each layer in a FCNN model."""
-    layer_details = []
-    
-    for name, module in model.named_modules():
-        if isinstance(module, nn.Linear):
-            layer_details.append(LayerDetails(
-                name=name,
-                in_features=module.in_features,
-                out_features=module.out_features,
-                n_neurons=module.out_features
-            ))
-    
-    return layer_details
-
-
-
 # Pydantic models for parameters and results
 class FCNNModelParams(BaseModel):
     """Parameters for configuring the FCNN model."""

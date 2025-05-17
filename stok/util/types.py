@@ -25,14 +25,6 @@ class ModelSummary(BaseModel):
     layers: List[LayerInfo]
 
 
-class LayerDetails(BaseModel):
-    """Detailed information about a layer for fcnn_layer_details function."""
-    name: str
-    in_features: int
-    out_features: int
-    n_neurons: int
-
-
 class CacheMetadata(BaseModel):
     """Metadata for cached objects."""
     cache_name: str
