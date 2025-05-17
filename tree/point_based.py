@@ -14,7 +14,7 @@ class PointSampleStrategy(ABC):
         pass
 
     @abstractmethod
-    def sample(self, sdf: Callable[[np.ndarray], np.ndarray]) -> np.ndarray:
+    def sample(self, sdf: Callable[[np.ndarray], np.ndarray]) -> tuple[np.ndarray, np.ndarray]:
         pass
 
 class RandomSampleStrategy(PointSampleStrategy):
@@ -23,22 +23,21 @@ class RandomSampleStrategy(PointSampleStrategy):
         self.bound_begin = bound_begin
         self.bound_end = bound_end
         
-    def sample(self, sdf: Callable[[np.ndarray], np.ndarray]) -> np.ndarray:
+    def sample(self, sdf: Callable[[np.ndarray], np.ndarray]) -> tuple[np.ndarray, np.ndarray]:
         sample = np.random.uniform(self.bound_begin, self.bound_end, (self.n, 3))
 
         distances = sdf(sample)
         distances = distances.reshape(-1, 1)
 
-        combined = np.hstack((sample, distances))
+        return sample, distances
 
-        assert combined.shape == (self.n, 4), f"The outputted shape from sampling is expected to be {(self.n, 4)} but is {combined.shape}"
-
-        return combined
 
 # Experiment
-
 class PointBasedExperimentResult(BaseModel):
-    ...
+    points: np.ndarray
+    distances: np.ndarray
+
+    # TODO Add validator that validates the shapes
 
 class PointBasedExperiment(ExperimentBase):
     NAME: ClassVar[str] = "PointBasedExperiment"
@@ -56,4 +55,6 @@ class PointBasedExperiment(ExperimentBase):
         self.bound_end = bound_end if isinstance(bound_end, np.ndarray) else np.array(bound_end)
         
     def do(self) -> PointBasedExperimentResult:
-        pass
+        """Perform the experiment."""
+        points, distances = self.sample_strategy.sample(self.sdf)
+        return PointBasedExperimentResult(points=points, distances=distances)

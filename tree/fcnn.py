@@ -3,8 +3,7 @@
 import os
 import time
 import json
-from typing import Dict, Any, Callable, Tuple, Union, Optional, ClassVar, List
-from pathlib import Path
+from typing import Any, Callable, Union, ClassVar
 
 import numpy as np
 import torch
@@ -14,7 +13,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
 from pydantic import BaseModel, Field
 
-from .point_based import PointBasedExperiment, PointSampleStrategy
+from .point_based import PointBasedExperiment, PointSampleStrategy, PointBasedExperimentResult
 from util.paths import get_reports_dir
 from util.sdf.similarity import sdf_get_sampled_boolean_similarity
 
@@ -101,11 +100,11 @@ class FCNNExperiment(PointBasedExperiment):
     def __init__(self, 
                  sample_strategy: PointSampleStrategy,
                  sdf: Callable[[np.ndarray], np.ndarray],
-                 bound_begin: Union[np.ndarray, Tuple[float, float, float]],
-                 bound_end: Union[np.ndarray, Tuple[float, float, float]],
-                 model_params: Optional[Union[FCNNModelParams, Dict[str, Any]]] = None,
-                 train_params: Optional[Union[FCNNTrainParams, Dict[str, Any]]] = None,
-                 experiment_name: str = "fcnn_experiment") -> None:
+                 bound_begin: Union[np.ndarray, tuple[float, float, float]],
+                 bound_end: Union[np.ndarray, tuple[float, float, float]],
+                 model_params: Union[FCNNModelParams, dict[str, Any]],
+                 train_params: Union[FCNNTrainParams, dict[str, Any]],
+                 experiment_name: str) -> None:
         """Initialize the FCNN experiment.
         
         Args:
@@ -158,13 +157,10 @@ class FCNNExperiment(PointBasedExperiment):
         print(f"Running {self.NAME} ({self.VERSION}) on {self.device}")
         
         # Sample points and prepare data
-        base_results = super().do()
-        data = base_results['data']
+        base_results: PointBasedExperimentResult = super().do()
         
-        # Prepare input features and target values
-        # Assuming data is now a numpy array with columns [x, y, z, distance]
-        X = data[:, :3]  # First 3 columns are x, y, z
-        y = data[:, 3:4]  # Last column is distance
+        X = base_results.points
+        y = base_results.distances.reshape(-1, 1) 
         
         # Convert to PyTorch tensors for the full dataset
         X_tensor = torch.FloatTensor(X).to(self.device)
