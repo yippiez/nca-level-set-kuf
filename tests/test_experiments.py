@@ -97,10 +97,11 @@ def test_random_sample_strategy():
     strategy = RandomSampleStrategy(n=100, bound_begin=bound_begin, bound_end=bound_end)
     
     # Sample points
-    result = strategy.sample(sdf_func)
+    points, distances = strategy.sample(sdf_func)
     
     # Check results
-    assert result.shape[0] == 100  # 100 points
-    assert result.shape[1] == 4  # x, y, z, distance
-    assert np.all(result[:, :3] >= bound_begin)  # All points within bounds
-    assert np.all(result[:, :3] <= bound_end)
+    assert points.shape[0] == 100  # 100 points
+    assert points.shape[1] == 3  # x, y, z
+    assert distances.shape[0] == 100  # 100 distance values
+    assert np.all(points >= bound_begin)  # All points within bounds
+    assert np.all(points <= bound_end)

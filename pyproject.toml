@@ -1,7 +1,7 @@
 [project]
 name = "nca-level-set-kuf"
 version = "0.1.0"
-description = "Add your description here"
+description = "Signed Distance Field Operations Toolkit"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -23,3 +23,10 @@ dev = [
 dev = [
     "pytest>=8.3.5",
 ]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["stok", "stok.tree", "stok.util", "stok.util.sdf"]

@@ -1,6 +1,7 @@
 """FCNN-based experiment implementation."""
 
 import os
+from pathlib import Path
 import time
 import json
 from typing import Any, Callable, Union, ClassVar
@@ -13,9 +14,37 @@ import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
 from pydantic import BaseModel, Field
 
-from .point_based import PointBasedExperiment, PointSampleStrategy, PointBasedExperimentResult
-from util.paths import get_reports_dir
-from util.sdf.similarity import sdf_get_sampled_boolean_similarity
+from stok.tree.point_based import PointBasedExperiment, PointSampleStrategy, PointBasedExperimentResult
+from stok.util.sdf.similarity import sdf_get_sampled_boolean_similarity
+from stok.util.types import LayerDetails
+
+
+def fcnn_n_perceptrons(model: nn.Module) -> int:
+    """Count the total number of perceptrons in a FCNN model."""
+    total_perceptrons = 0
+    
+    for _, module in model.named_modules():
+        if isinstance(module, nn.Linear):
+            total_perceptrons += module.out_features
+    
+    return total_perceptrons
+
+
+def fcnn_layer_details(model: nn.Module) -> list[LayerDetails]:
+    """Get detailed information about each layer in a FCNN model."""
+    layer_details = []
+    
+    for name, module in model.named_modules():
+        if isinstance(module, nn.Linear):
+            layer_details.append(LayerDetails(
+                name=name,
+                in_features=module.in_features,
+                out_features=module.out_features,
+                n_neurons=module.out_features
+            ))
+    
+    return layer_details
+
 
 
 # Pydantic models for parameters and results
@@ -119,27 +148,22 @@ class FCNNExperiment(PointBasedExperiment):
             model_name: Name of the model (used for naming model files in reports)
         """
         super().__init__(sample_strategy, sdf, bound_begin, bound_end)
-        
-        # Convert dict to Pydantic model if needed
-        if model_params is None:
-            self.model_params = FCNNModelParams()
-        elif isinstance(model_params, dict):
-            self.model_params = FCNNModelParams(**model_params)
-        else:
-            self.model_params = model_params
-        
-        # Convert dict to Pydantic model if needed
-        if train_params is None:
-            self.train_params = FCNNTrainParams()
-        elif isinstance(train_params, dict):
-            self.train_params = FCNNTrainParams(**train_params)
-        else:
-            self.train_params = train_params
-        
+        self.model_params = model_params
+        self.train_params = train_params
         self.model_name = model_name
         self.model = None
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.history = None
+
+    @property
+    def dump_path(self) -> Path:
+        """Get the path to dump the experiment results."""
+        original_dump_path = super().dump_path
+
+        experiment_dir = original_dump_path / self.model_name
+        os.makedirs(experiment_dir, exist_ok=True)
+
+        return experiment_dir
     
     def do(self) -> FCNNExperimentResult:
         """Run the FCNN experiment.
@@ -222,20 +246,15 @@ class FCNNExperiment(PointBasedExperiment):
         total_time = time.time() - start_time
         print(f"Training completed in {total_time:.2f} seconds")
         
-        # Create reports directory
-        reports_dir = get_reports_dir(self.experiment_name)
-        model_dir = os.path.join(reports_dir, self.model_name)
-        os.makedirs(model_dir, exist_ok=True)
-        
         # Save model
-        model_path = os.path.join(model_dir, 'model.pth')
+        model_path = os.path.join(self.dump_path, f'{self.model_name}.pth')
         torch.save(self.model.state_dict(), model_path)
         
         # Store history for later use
         self.history = history
         
         # Save training history
-        history_path = os.path.join(model_dir, 'training_history.json')
+        history_path = os.path.join(self.dump_path, f'{self.model_name}_training_history.json')
         with open(history_path, 'w') as f:
             json.dump(history, f, indent=2)
         
@@ -269,6 +288,7 @@ class FCNNExperiment(PointBasedExperiment):
         print(f"Boolean similarity: {boolean_similarity:.4f}")
         
         # Create metrics
+        # TODO add n_perceptron as metric here
         metrics = FCNNExperimentMetrics(
             boolean_similarity=float(boolean_similarity),
             training_time=float(total_time),
@@ -277,11 +297,11 @@ class FCNNExperiment(PointBasedExperiment):
         )
         
         # Create result object
-        dump_path = os.path.join(model_dir, 'experiment_result.json')
+        dump_path = os.path.join(self.dump_path, f'{self.model_name}_experiment_result.json')
         result = FCNNExperimentResult(
             data_size=len(X),
             model_path=model_path,
-            dump_path=model_dir,
+            dump_path=self.dump_path,
             metrics=metrics,
             model_params=self.model_params,
             train_params=self.train_params
@@ -289,15 +309,20 @@ class FCNNExperiment(PointBasedExperiment):
         
         # Save the result as JSON
         with open(dump_path, 'w') as f:
-            # Use model_dump for Pydantic v2
-            if hasattr(result, 'model_dump'):
-                f.write(json.dumps(result.model_dump(), indent=2))
-            # Use dict() for Pydantic v1
-            else:
-                f.write(json.dumps(result.dict(), indent=2))
+            f.write(json.dumps(result.model_dump(), indent=2))
                 
         return result
     
+
+    def show_as_side_by_side(self):
+        raise NotImplementedError("This method is not implemented yet. ")
+
+    def show_as_animation(self):
+        pass
+
+    def show_as_grid(self):
+        pass
+
     def predict(self, points: np.ndarray) -> np.ndarray:
         """Make predictions using the trained model.
         

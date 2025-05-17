@@ -1,8 +1,9 @@
 
 from abc import ABC, abstractmethod
-from typing import Callable, Dict, Any, ClassVar, Union, Tuple
+from typing import Callable, ClassVar, Union, Tuple
 from pydantic import BaseModel
-from .experiment import ExperimentBase 
+
+from stok.tree.experiment import ExperimentBase
 
 import numpy as np
 
@@ -38,6 +39,9 @@ class PointBasedExperimentResult(BaseModel):
     distances: np.ndarray
 
     # TODO Add validator that validates the shapes
+    
+    class Config:
+        arbitrary_types_allowed = True
 
 class PointBasedExperiment(ExperimentBase):
     NAME: ClassVar[str] = "PointBasedExperiment"
@@ -58,3 +62,26 @@ class PointBasedExperiment(ExperimentBase):
         """Perform the experiment."""
         points, distances = self.sample_strategy.sample(self.sdf)
         return PointBasedExperimentResult(points=points, distances=distances)
+
+
+if __name__ == "__main__":
+    # Example usage
+    def example_sdf(points: np.ndarray) -> np.ndarray:
+        return np.linalg.norm(points, axis=1) - 1.0  # Example SDF (sphere of radius 1)
+    
+    bound_begin = np.array([-2.0, -2.0, -2.0])
+    bound_end = np.array([2.0, 2.0, 2.0])
+    
+    sample_strategy = RandomSampleStrategy(n=1000, bound_begin=bound_begin, bound_end=bound_end)
+    
+    experiment = PointBasedExperiment(sample_strategy=sample_strategy, sdf=example_sdf, 
+                                       bound_begin=bound_begin, bound_end=bound_end)
+    
+    print("Dump Path:")
+    print(experiment.dump_path)
+    
+    print()
+
+    print("Doing Experiment:")
+    result = experiment.do()
+    print(result)

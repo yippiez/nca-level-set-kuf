@@ -7,7 +7,7 @@ from typing import Optional, Callable, List, Dict, Any, Tuple
 from skimage.measure import marching_cubes
 from PIL import Image, ImageDraw, ImageFont
 import os
-from ..types import CSGRenderConfig
+from stok.util.types import CSGRenderConfig
 from pathlib import Path
 
 
