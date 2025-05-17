@@ -22,7 +22,8 @@ class ExperimentBase(ABC):
         """Run the experiment and return results as json to be saved"""
         pass
     
-    def __str__(self) -> str:
-        """Return a string representation of the experiment."""
-        return f"{self.NAME} ({self.VERSION})"
+    @property
+    def experiment_name(self) -> str:
+        """Get the name of the experiment."""
+        return f"{self.NAME}_{self.VERSION}"
 

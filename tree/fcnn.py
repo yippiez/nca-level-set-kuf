@@ -44,7 +44,7 @@ class FCNNExperimentResult(BaseModel):
     """Results from the FCNN experiment."""
     data_size: int = Field(description="Number of data points used")
     model_path: str = Field(description="Path where the model was saved")
-    report_path: str = Field(description="Path where the experiment report was saved as JSON")
+    dump_path: str = Field(description="Path where all experiment outputs will be saved")
     metrics: FCNNExperimentMetrics = Field(description="Performance metrics")
     model_params: FCNNModelParams = Field(description="Model parameters used")
     train_params: FCNNTrainParams = Field(description="Training parameters used")
@@ -104,7 +104,7 @@ class FCNNExperiment(PointBasedExperiment):
                  bound_end: Union[np.ndarray, tuple[float, float, float]],
                  model_params: Union[FCNNModelParams, dict[str, Any]],
                  train_params: Union[FCNNTrainParams, dict[str, Any]],
-                 experiment_name: str) -> None:
+                 model_name: str) -> None:
         """Initialize the FCNN experiment.
         
         Args:
@@ -116,7 +116,7 @@ class FCNNExperiment(PointBasedExperiment):
                         (input_size, hidden_size, output_size, num_layers)
             train_params: Training parameters
                         (batch_size, learning_rate, num_epochs)
-            experiment_name: Name of the experiment (used for saving results)
+            model_name: Name of the model (used for naming model files in reports)
         """
         super().__init__(sample_strategy, sdf, bound_begin, bound_end)
         
@@ -136,7 +136,7 @@ class FCNNExperiment(PointBasedExperiment):
         else:
             self.train_params = train_params
         
-        self.experiment_name = experiment_name
+        self.model_name = model_name
         self.model = None
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.history = None
@@ -224,14 +224,20 @@ class FCNNExperiment(PointBasedExperiment):
         
         # Create reports directory
         reports_dir = get_reports_dir(self.experiment_name)
-        os.makedirs(reports_dir, exist_ok=True)
+        model_dir = os.path.join(reports_dir, self.model_name)
+        os.makedirs(model_dir, exist_ok=True)
         
         # Save model
-        model_path = os.path.join(reports_dir, 'model.pt')
+        model_path = os.path.join(model_dir, 'model.pth')
         torch.save(self.model.state_dict(), model_path)
         
         # Store history for later use
         self.history = history
+        
+        # Save training history
+        history_path = os.path.join(model_dir, 'training_history.json')
+        with open(history_path, 'w') as f:
+            json.dump(history, f, indent=2)
         
         # Evaluate the model using boolean similarity
         # Create a prediction function from our trained model
@@ -271,18 +277,18 @@ class FCNNExperiment(PointBasedExperiment):
         )
         
         # Create result object
-        report_path = os.path.join(reports_dir, 'experiment_result.json')
+        dump_path = os.path.join(model_dir, 'experiment_result.json')
         result = FCNNExperimentResult(
             data_size=len(X),
             model_path=model_path,
-            report_path=report_path,
+            dump_path=model_dir,
             metrics=metrics,
             model_params=self.model_params,
             train_params=self.train_params
         )
         
         # Save the result as JSON
-        with open(report_path, 'w') as f:
+        with open(dump_path, 'w') as f:
             # Use model_dump for Pydantic v2
             if hasattr(result, 'model_dump'):
                 f.write(json.dumps(result.model_dump(), indent=2))
