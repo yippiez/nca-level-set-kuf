@@ -68,6 +68,7 @@ class FCNNExperimentMetrics(BaseModel):
     training_time: float = Field(description="Total training time in seconds")
     epochs: int = Field(description="Number of epochs the model was trained")
     loss: float = Field(description="Final training loss value")
+    n_perceptrons: int = Field(description="Total number of perceptrons in the model")
 
 class FCNNExperimentResult(BaseModel):
     """Results from the FCNN experiment."""
@@ -288,12 +289,12 @@ class FCNNExperiment(PointBasedExperiment):
         print(f"Boolean similarity: {boolean_similarity:.4f}")
         
         # Create metrics
-        # TODO add n_perceptron as metric here
         metrics = FCNNExperimentMetrics(
             boolean_similarity=float(boolean_similarity),
             training_time=float(total_time),
             epochs=num_epochs,
-            loss=float(final_loss)
+            loss=float(final_loss),
+            n_perceptrons=fcnn_n_perceptrons(self.model)
         )
         
         # Create result object
@@ -315,13 +316,13 @@ class FCNNExperiment(PointBasedExperiment):
     
 
     def show_as_side_by_side(self):
-        raise NotImplementedError("This method is not implemented yet. ")
+        raise NotImplementedError("This method is not implemented yet") # TODO Implement this
 
     def show_as_animation(self):
-        pass
+        raise NotImplementedError("This method is not implemented yet") # TODO Implement this
 
     def show_as_grid(self):
-        pass
+        raise NotImplementedError("This method is not implemented yet") # TODO Implement this
 
     def predict(self, points: np.ndarray) -> np.ndarray:
         """Make predictions using the trained model.
