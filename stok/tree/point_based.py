@@ -1,7 +1,7 @@
 
 from abc import ABC, abstractmethod
 from typing import Callable, ClassVar, Union, Tuple
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 from stok.tree.experiment import ExperimentBase
 
@@ -37,8 +37,20 @@ class RandomSampleStrategy(PointSampleStrategy):
 class PointBasedExperimentResult(BaseModel):
     points: np.ndarray
     distances: np.ndarray
-
-    # TODO Add validator that validates the shapes
+    
+    @model_validator(mode='after')
+    def validate_shapes(self):
+        if not (self.points.ndim == 2 and self.points.shape[1] == 3):
+            raise ValueError(f"Points must be a 2D array with shape (n, 3), got {self.points.shape}")
+        
+        if not (self.distances.ndim == 2 and self.distances.shape[1] == 1):
+            raise ValueError(f"Distances must be a 2D array with shape (n, 1), got {self.distances.shape}")
+        
+        if self.points.shape[0] != self.distances.shape[0]:
+            raise ValueError(f"Points and distances must have the same number of samples, "
+                             f"got {self.points.shape[0]} and {self.distances.shape[0]}")
+        
+        return self
     
     class Config:
         arbitrary_types_allowed = True
