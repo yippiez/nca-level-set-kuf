@@ -19,34 +19,6 @@ class PointSampleStrategy(ABC):
         pass
 
 class RandomSampleStrategy(PointSampleStrategy):
-    def __init__(self, n: int, bound_begin: np.ndarray, bound_end: np.ndarray) -> None:
-        self.n = n
-        self.bound_begin = bound_begin
-        self.bound_end = bound_end
-        
-    def sample(self, sdfs: List[Callable[[np.ndarray], np.ndarray]], sdf_shape_values: List[float] = None) -> tuple[np.ndarray, np.ndarray]:
-        # Default shape value for 4D points
-        default_shape_value = 0.0
-        if sdf_shape_values is not None and len(sdf_shape_values) > 0:
-            default_shape_value = sdf_shape_values[0]
-            
-        # Use the first SDF for sampling
-        sdf = sdfs[0]
-            
-        # Sample 3D points (x, y, z)
-        xyz = np.random.uniform(self.bound_begin[:3], self.bound_end[:3], (self.n, 3))
-        
-        # Add shape parameter to create 4D points
-        shape_param = np.full((self.n, 1), default_shape_value)
-        sample = np.concatenate([xyz, shape_param], axis=1)
-
-        # Get distances using the appropriate SDF
-        distances = sdf(xyz)
-        distances = distances.reshape(-1, 1)
-
-        return sample, distances
-        
-class RandomSample4DStrategy(PointSampleStrategy):
     """Strategy for sampling 4D points (xyz + shape parameter)."""
     
     def __init__(self, n: int, bound_begin: np.ndarray, bound_end: np.ndarray, shape_values: List[float] = None) -> None:

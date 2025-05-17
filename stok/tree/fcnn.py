@@ -14,7 +14,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
 from pydantic import BaseModel, Field
 
-from stok.tree.point_based import PointBasedExperiment, PointSampleStrategy, PointBasedExperimentResult, RandomSample4DStrategy
+from stok.tree.point_based import PointBasedExperiment, PointSampleStrategy, PointBasedExperimentResult, RandomSampleStrategy
 from stok.util.sdf.similarity import sdf_get_sampled_boolean_similarity
 from stok.util.types import LayerDetails, CSGRenderConfig
 from stok.util.sdf.render import (
@@ -555,7 +555,7 @@ def experiment_1():
     n_points = 5000  # Reduced number of points
     
     # Create 4D sample strategy
-    sample_strategy = RandomSample4DStrategy(
+    sample_strategy = RandomSampleStrategy(
         n=n_points,
         bound_begin=bound_begin,
         bound_end=bound_end,
