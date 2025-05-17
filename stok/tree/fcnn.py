@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 import time
 import json
-from typing import Any, Callable, Union, ClassVar
+from typing import Any, Callable, Union, ClassVar, Tuple
 
 import numpy as np
 import torch
@@ -16,7 +16,12 @@ from pydantic import BaseModel, Field
 
 from stok.tree.point_based import PointBasedExperiment, PointSampleStrategy, PointBasedExperimentResult
 from stok.util.sdf.similarity import sdf_get_sampled_boolean_similarity
-from stok.util.types import LayerDetails
+from stok.util.types import LayerDetails, CSGRenderConfig
+from stok.util.sdf.render import (
+    sdf_render_level_set_side_to_side,
+    sdf_render_csg_animation,
+    sdf_render_level_set_grid
+)
 
 
 def fcnn_n_perceptrons(model: nn.Module) -> int:
@@ -289,7 +294,7 @@ class FCNNExperiment(PointBasedExperiment):
         print(f"Boolean similarity: {boolean_similarity:.4f}")
         
         # Create metrics
-        metrics = FCNNExperimentMetrics(
+        self.metrics = FCNNExperimentMetrics(
             boolean_similarity=float(boolean_similarity),
             training_time=float(total_time),
             epochs=num_epochs,
@@ -302,8 +307,8 @@ class FCNNExperiment(PointBasedExperiment):
         result = FCNNExperimentResult(
             data_size=len(X),
             model_path=model_path,
-            dump_path=self.dump_path,
-            metrics=metrics,
+            dump_path=str(self.dump_path),
+            metrics=self.metrics,
             model_params=self.model_params,
             train_params=self.train_params
         )
@@ -314,15 +319,162 @@ class FCNNExperiment(PointBasedExperiment):
                 
         return result
     
+    
+    def show_as_side_by_side(self, resolution=30, image_size=(400, 400)):
+        """Render original SDF and learned SDF side-by-side for comparison.
+        
+        Args:
+            resolution: Grid resolution for marching cubes
+            image_size: Size of output image
+            
+        Returns:
+            str: Path to the saved side-by-side image
+        """
+        if self.model is None:
+            raise RuntimeError("Model has not been trained yet")
+        
+        # Get spatial bounds (just the x,y,z components, not the shape param)
+        bounds_min = min(self.bound_begin[:3])
+        bounds_max = max(self.bound_end[:3])
+        bounds = (bounds_min, bounds_max)
+        
+        # Create save path
+        save_path = self.dump_path / f"{self.model_name}_side_by_side.png"
+        
+        # Define 4D SDF function using the model
+        def learned_sdf(points_4d):
+            with torch.no_grad():
+                points_tensor = torch.FloatTensor(points_4d).to(self.device)
+                predictions = self.model(points_tensor).cpu().numpy()
+            return predictions.flatten()
+        
+        # Define target SDF functions for different shape values (0 = sphere, 1 = cube)
+        def target_sdf_sphere(points):
+            # Add shape param = 0 (sphere) to spatial points
+            shape_param = np.zeros((points.shape[0], 1))
+            points_4d = np.concatenate([points, shape_param], axis=1)
+            return self.sdf(points_4d)
+            
+        def target_sdf_cube(points):
+            # Add shape param = 1 (cube) to spatial points
+            shape_param = np.ones((points.shape[0], 1))
+            points_4d = np.concatenate([points, shape_param], axis=1)
+            return self.sdf(points_4d)
+        
+        # Create config
+        config = CSGRenderConfig(
+            grid_size=resolution,
+            bounds=bounds,
+            image_size=image_size,
+            save_path=str(save_path)
+        )
+        
+        # Use both shape values for comparison (sphere and cube)
+        shape_values = [0.0, 1.0]  # 0 = sphere, 1 = cube
+        target_sdfs = [target_sdf_sphere, target_sdf_cube]
+        
+        # Create comparison with metrics
+        return sdf_render_level_set_side_to_side(
+            learned_sdf,
+            target_sdfs,
+            shape_values,
+            config,
+            [("Boolean Similarity", [self.metrics.boolean_similarity])]
+        )
 
-    def show_as_side_by_side(self):
-        raise NotImplementedError("This method is not implemented yet") # TODO Implement this
+    def show_as_animation(self, resolution=30, image_size=(400, 400), n_frames=20, fps=10, shape_value=0.5):
+        """Create an animation showing the model rendering from different viewpoints.
+        
+        Args:
+            resolution: Grid resolution for marching cubes
+            image_size: Size of output frames
+            n_frames: Number of frames in animation
+            fps: Frames per second
+            shape_value: Value of the shape parameter to use (between 0 and 1)
+            
+        Returns:
+            str: Path to the saved animation
+        """
+        if self.model is None:
+            raise RuntimeError("Model has not been trained yet")
+        
+        # Get spatial bounds (just the x,y,z components)
+        bounds_min = min(self.bound_begin[:3])
+        bounds_max = max(self.bound_end[:3])
+        bounds = (bounds_min, bounds_max)
+        
+        # Create save path
+        save_path = self.dump_path / f"{self.model_name}_animation_{shape_value:.1f}.gif"
+        
+        # Define SDF function with fixed shape parameter
+        def model_sdf(points):
+            # Add the shape parameter to each point
+            shape_param = np.full((points.shape[0], 1), shape_value)
+            points_4d = np.concatenate([points, shape_param], axis=1)
+            
+            with torch.no_grad():
+                points_tensor = torch.FloatTensor(points_4d).to(self.device)
+                predictions = self.model(points_tensor).cpu().numpy()
+            return predictions.flatten()
+        
+        # Create config
+        config = CSGRenderConfig(
+            grid_size=resolution,
+            bounds=bounds,
+            image_size=image_size,
+            n_frames=n_frames,
+            fps=fps,
+            save_path=str(save_path)
+        )
+        
+        return sdf_render_csg_animation(model_sdf, config)
 
-    def show_as_animation(self):
-        raise NotImplementedError("This method is not implemented yet") # TODO Implement this
-
-    def show_as_grid(self):
-        raise NotImplementedError("This method is not implemented yet") # TODO Implement this
+    def show_as_grid(self, resolution=30, image_size=(400, 400), shape_values=None):
+        """Create a grid of images showing the model outputs with different shape parameters.
+        
+        This is useful for models trained on 4D SDFs where the fourth dimension is a shape parameter.
+        
+        Args:
+            resolution: Grid resolution for marching cubes
+            image_size: Size of output frames
+            shape_values: List of shape parameter values to use. If None, uses default range.
+            
+        Returns:
+            str: Path to the saved grid image
+        """
+        import numpy as np
+        
+        if self.model is None:
+            raise RuntimeError("Model has not been trained yet")
+            
+        # Get spatial bounds (just x,y,z components)
+        bounds_min = min(self.bound_begin[:3])
+        bounds_max = max(self.bound_end[:3])
+        bounds = (bounds_min, bounds_max)
+        
+        # Create save path
+        save_path = self.dump_path / f"{self.model_name}_shape_grid.png"
+        
+        # Define SDF function that accepts 4D points (x,y,z,shape)
+        def model_sdf_4d(points_4d):
+            with torch.no_grad():
+                points_tensor = torch.FloatTensor(points_4d).to(self.device)
+                predictions = self.model(points_tensor).cpu().numpy()
+            return predictions.flatten()
+        
+        # Create config
+        config = CSGRenderConfig(
+            grid_size=resolution,
+            bounds=bounds,
+            image_size=image_size,
+            save_path=str(save_path)
+        )
+        
+        # Use default or provided shape values
+        if shape_values is None:
+            shape_values = np.linspace(0, 1, 4)
+        
+        return sdf_render_level_set_grid(model_sdf_4d, config, shape_values)
 
     def predict(self, points: np.ndarray) -> np.ndarray:
         """Make predictions using the trained model.
