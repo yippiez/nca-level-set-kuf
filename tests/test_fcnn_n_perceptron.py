@@ -9,7 +9,6 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from models.fcnn import FCNN
-from util.cache import cache_get_torch, cache_get_json, cache_get_pickle
 from util.eval import fcnn_n_perceptrons, fcnn_layer_details, model_summary
 
 
@@ -20,45 +19,40 @@ def device():
 
 
 @pytest.fixture
-def cached_model(device):
-    """Load the cached 4D SDF model."""
-    cache_name = 'sdf_4d_model'
+def test_model(device):
+    """Create a test model for validation."""
+    # Create the same size model as the original cached one for test compatibility
+    input_size = 4  # x, y, z, shape
+    hidden_size = 64
+    output_size = 1  # SDF value
+    num_layers = 5
     
-    # Load model parameters
-    model_params = cache_get_json(f'{cache_name}_params')
+    # Set seed for reproducibility
+    torch.manual_seed(42)
     
-    # Create model instance
     model = FCNN(
-        input_size=model_params['input_size'],
-        hidden_size=model_params['hidden_size'],
-        output_size=model_params['output_size'],
-        num_layers=model_params['num_layers']
+        input_size=input_size,
+        hidden_size=hidden_size,
+        output_size=output_size,
+        num_layers=num_layers
     ).to(device)
     
-    # Load state dict
-    try:
-        state_dict = cache_get_torch(cache_name)
-    except:
-        state_dict = cache_get_pickle(cache_name)
-    
-    model.load_state_dict(state_dict)
     model.eval()
-    
     return model
 
 
-def test_fcnn_n_perceptrons(cached_model):
+def test_fcnn_n_perceptrons(test_model):
     """Test the fcnn_n_perceptrons function."""
-    n_perceptrons = fcnn_n_perceptrons(cached_model)
+    n_perceptrons = fcnn_n_perceptrons(test_model)
     
     # Expected value based on model architecture: 
     # 4 hidden layers with 64 neurons each + 1 output neuron = 257
     assert n_perceptrons == 257, f"Expected 257 perceptrons, got {n_perceptrons}"
 
 
-def test_fcnn_layer_details(cached_model):
+def test_fcnn_layer_details(test_model):
     """Test the fcnn_layer_details function."""
-    layer_details = fcnn_layer_details(cached_model)
+    layer_details = fcnn_layer_details(test_model)
     
     # Should have 5 layers
     assert len(layer_details) == 5, f"Expected 5 layers, got {len(layer_details)}"
@@ -80,9 +74,9 @@ def test_fcnn_layer_details(cached_model):
     assert layer_details[4].n_neurons == 1
 
 
-def test_model_summary(cached_model):
+def test_model_summary(test_model):
     """Test the model_summary function."""
-    summary = model_summary(cached_model)
+    summary = model_summary(test_model)
     
     # Check total perceptrons
     assert summary.total_perceptrons == 257
@@ -109,13 +103,13 @@ def test_model_summary(cached_model):
             assert layer.output_size == 1
 
 
-def test_manual_verification_matches(cached_model):
+def test_manual_verification_matches(test_model):
     """Test that manual count matches function count."""
-    n_perceptrons = fcnn_n_perceptrons(cached_model)
+    n_perceptrons = fcnn_n_perceptrons(test_model)
     
     # Manual count
     manual_count = 0
-    for layer in cached_model.layers:
+    for layer in test_model.layers:
         if isinstance(layer, torch.nn.Linear):
             manual_count += layer.out_features
     

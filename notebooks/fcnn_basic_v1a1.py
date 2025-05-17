@@ -30,7 +30,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from models.fcnn import FCNN
 from util.paths import get_reports_dir
 from util.sdf import sdf_pill, sdf_box, sdf_torus
-from util.cache import cache_save, cache_exists, cache_get_torch, cache_get_pickle, cache_get_numpy
+# Cache imports removed in refactoring
 
 # %% 
 # Set random seeds for reproducibility
@@ -72,12 +72,7 @@ def generate_data(num_points_per_shape=10000):
     Returns:
         Tuple of (inputs, targets) as PyTorch tensors
     """
-    # Check if data is already cached
-    cache_name = f"sdf_data_{num_points_per_shape}"
-    if cache_exists(cache_name, extension="pt"):
-        print(f"Loading cached SDF data from {cache_name}")
-        data_dict = cache_get_torch(cache_name)
-        return data_dict['inputs'], data_dict['targets']
+    # Cache checking removed in refactoring
     
     print(f"Generating {num_points_per_shape} points per shape...")
     
@@ -138,13 +133,11 @@ def generate_data(num_points_per_shape=10000):
     inputs_tensor = torch.FloatTensor(inputs)
     targets_tensor = torch.FloatTensor(targets)
     
-    # Cache the data for future use
+    # Caching removed in refactoring
     data_dict = {
         'inputs': inputs_tensor,
         'targets': targets_tensor
     }
-    cache_save(data_dict, cache_name)
-    print(f"SDF data cached as {cache_name}")
     
     return inputs_tensor, targets_tensor
 
@@ -388,24 +381,20 @@ def main():
     for shape_type in range(4):
         visualize_predictions(model, shape_type)
     
-    # Save the model to cache
+    # Model cache saving removed in refactoring
     model_cache_name = 'sdf_4d_model'
-    cache_save(model.state_dict(), model_cache_name)
-    print(f"Model saved to cache as '{model_cache_name}'")
     
     # Also save as PyTorch .pth file
     torch.save(model.state_dict(), os.path.join(get_reports_dir('fcnn_basic_v1a1'), f'{model_cache_name}.pth'))
     print(f"Model saved as PyTorch file: {os.path.join(get_reports_dir('fcnn_basic_v1a1'), f'{model_cache_name}.pth')}")
     
-    # Also save the model architecture parameters for loading later
+    # Model parameters saving to cache removed in refactoring
     model_params = {
         'input_size': input_size,
         'hidden_size': hidden_size,
         'output_size': output_size,
         'num_layers': num_layers
     }
-    cache_save(model_params, f'{model_cache_name}_params')
-    print(f"Model parameters saved to cache as '{model_cache_name}_params'")
     
     # Save parameters as PyTorch format too
     torch.save(model_params, os.path.join(get_reports_dir('fcnn_basic_v1a1'), f'{model_cache_name}_params.pth'))

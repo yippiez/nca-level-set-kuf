@@ -46,11 +46,11 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 # Import required modules
 from models.fcnn import FCNN
-from util.paths import get_reports_dir, get_cache_dir
+from util.paths import get_reports_dir
 from util.sdf import (sdf_sphere, sdf_pill, sdf_box, sdf_torus, sdf_cylinder,
                       sdf_cone, sdf_octahedron, sdf_pyramid, sdf_hexagonal_prism,
                       sdf_ellipsoid, sdf_rounded_box, sdf_link, sdf_star)
-from util.cache import cache_save, cache_exists, cache_get_torch
+# Cache imports removed in refactoring
 from util.types import CSGRenderConfig
 from util.sdf.render import (sdf_render_csg, sdf_render_csg_animation, 
                            sdf_render_level_set, sdf_render_level_set_grid,
