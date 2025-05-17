@@ -1,24 +1,11 @@
 # CLAUDE.md - Guidelines for Claude
 
 ## Build & Run Commands
-- Run Notebook `uv run notebooks/<NotebookName>`
 - Use `uv run pytest -v` to test
 
 ## Code Style Guidelines
-- Notebooks are `.py` NOT '.ipynb' files that use interactive notebooks i.e. `# %%` to designate and sepearte cells.
-- `# %% [markdown]` is used for markdown cells.
-- The notebooks should be designed in such a way to be runnable as normal python files.
-- Make sure to not repeat variable names in notebooks to ensure no variable collision occurs.
 - Always save final results (models, visualizations, etc.) to the reports directory
 - Don't print as much in the functions defined outside notebooks
-
-## Folder Structure
-- *models:* Where model definitions are stored
-- *notebooks:* Where experiments are defined using notebooks
-- *reports:* Where resulting tables, figures and models are stored
-  - Files should follow the `reports/<notebook_name>/` convention
-  - Each notebook should save its outputs to its own subdirectory
-- *util:* Utility scripts like visualizations, preprocessing etc.
 
 ## Implementation Notes
 - **Signed Distance Functions (SDFs)**: Implemented in `util/sdf/` module
@@ -35,9 +22,6 @@
 - **Path Utilities**: `util/paths.py` provides consistent directory management functions
   - `get_project_root()`: Returns the project root directory
   - `get_reports_dir(notebook_name)`: Returns the reports directory for a specific notebook
-- **Notebooks**:
-  - `notebooks/fcnn_basic_v1a1.py`: FCNN training experiment for learning SDFs
-  - `notebooks/fcnn_range_models.py`: FCNN models for learning different shape parameter ranges
 - **Tests**:
   - `tests/test_render.py`: Tests for SDF rendering functions (migrated from visualization notebooks)
 
@@ -56,3 +40,13 @@
   - Grandchildren of v1a will be v1a1, v1a2 and so on.
   - Grandchildren of v1a3 will be v1a3a, v1a3b and so on.
   - And so on, to create a clear hierarchical versioning system
+
+## Folder Structure Notes
+- Project root contains key directories:
+  - `stok/`: Main source code directory
+    - `tree/`: Versioned experiment tracking
+    - `util/`: Utility modules and helper functions
+      - `sdf/`: Signed Distance Function implementations
+      - `paths.py`: Path management utilities
+  - `tests/`: Test suites for different modules
+  - `reports/`: Output directory for experiment results and visualizations
