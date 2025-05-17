@@ -152,7 +152,7 @@ if __name__ == "__main__":
     sdf_shape_values = [0.0, 1.0]  # 0.0 = sphere, 1.0 = box
     
     # Create a 4D sample strategy
-    sample_strategy = RandomSample4DStrategy(
+    sample_strategy = RandomSampleStrategy(
         n=1000, 
         bound_begin=bound_begin, 
         bound_end=bound_end,
