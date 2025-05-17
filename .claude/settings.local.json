@@ -17,7 +17,8 @@
       "Bash(cp:*)",
       "Bash(ls:*)",
       "Bash(python3:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(python:*)"
     ],
     "deny": []
   }

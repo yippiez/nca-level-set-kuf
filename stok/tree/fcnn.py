@@ -20,7 +20,8 @@ from stok.util.types import LayerDetails, CSGRenderConfig
 from stok.util.sdf.render import (
     sdf_render_level_set_side_to_side,
     sdf_render_csg_animation,
-    sdf_render_level_set_grid
+    sdf_render_level_set_grid,
+    sdf_render_level_set
 )
 
 
@@ -409,15 +410,15 @@ class FCNNExperiment(PointBasedExperiment):
             [("Boolean Similarity", [self.metrics.boolean_similarity])]
         )
 
-    def show_as_animation(self, resolution=30, image_size=(400, 400), n_frames=20, fps=10, shape_value=0.5):
-        """Create an animation showing the model rendering from different viewpoints.
+    def show_as_animation(self, resolution=30, image_size=(400, 400), n_frames=20, fps=10, shape_range=None):
+        """Create an animation showing the model morphing through different shape values.
         
         Args:
             resolution: Grid resolution for marching cubes
             image_size: Size of output frames
             n_frames: Number of frames in animation
             fps: Frames per second
-            shape_value: Value of the shape parameter to use (between 0 and 1)
+            shape_range: Tuple (min, max) for shape values, default is (0, 1) if None
             
         Returns:
             str: Path to the saved animation
@@ -430,15 +431,18 @@ class FCNNExperiment(PointBasedExperiment):
         bounds_max = max(self.bound_end[:3])
         bounds = (bounds_min, bounds_max)
         
-        # Create save path
-        save_path = self.dump_path / f"{self.model_name}_animation_{shape_value:.1f}.gif"
-        
-        # Define SDF function with fixed shape parameter
-        def model_sdf(points):
-            # Add the shape parameter to each point
-            shape_param = np.full((points.shape[0], 1), shape_value)
-            points_4d = np.concatenate([points, shape_param], axis=1)
+        # Default shape range if not provided
+        if shape_range is None:
+            shape_range = (0.0, 1.0)
             
+        # Create shape values to animate through
+        shape_values = np.linspace(shape_range[0], shape_range[1], n_frames)
+        
+        # Create save path
+        save_path = self.dump_path / f"{self.model_name}_level_set_animation.gif"
+        
+        # Define 4D SDF function for the model
+        def model_sdf_4d(points_4d):
             with torch.no_grad():
                 points_tensor = torch.FloatTensor(points_4d).to(self.device)
                 predictions = self.model(points_tensor).cpu().numpy()
@@ -454,7 +458,7 @@ class FCNNExperiment(PointBasedExperiment):
             save_path=str(save_path)
         )
         
-        return sdf_render_csg_animation(model_sdf, config)
+        return sdf_render_level_set(model_sdf_4d, config, shape_values)
 
     def show_as_grid(self, resolution=30, image_size=(400, 400), shape_values=None):
         """Create a grid of images showing the model outputs with different shape parameters.
@@ -599,12 +603,9 @@ def experiment_1():
     side_by_side_path = experiment.show_as_side_by_side(resolution=20)
     print(f"Side-by-side comparison saved to: {side_by_side_path}")
     
-    # Create animations for different shape values
-    sphere_anim_path = experiment.show_as_animation(resolution=20, n_frames=10, shape_value=0.0)
-    print(f"Sphere animation saved to: {sphere_anim_path}")
-    
-    cube_anim_path = experiment.show_as_animation(resolution=20, n_frames=10, shape_value=1.0)
-    print(f"Cube animation saved to: {cube_anim_path}")
+    # Create level set animation that morphs between shape values
+    level_set_anim_path = experiment.show_as_animation(resolution=20, n_frames=10, shape_range=(0.0, 1.0))
+    print(f"Level set animation saved to: {level_set_anim_path}")
     
     # Create grid showing shape transition
     grid_path = experiment.show_as_grid(resolution=20, shape_values=np.linspace(0, 1, 4))
